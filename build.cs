@@ -1,0 +1,105 @@
+#:sdk Cake.Sdk@6.0.0
+
+var target = Argument("target", "Default");
+var configuration = Argument("configuration", "Release");
+
+////////////////////////////////////////////////////////////////
+// Tasks
+
+Task("Clean")
+    .Does(context =>
+{
+    context.CleanDirectory("./.artifacts");
+});
+
+Task("Lint")
+    .Does(context =>
+{
+    DotNetFormatStyle("./Spectre.Tui.Doodads.slnx", new DotNetFormatSettings
+    {
+        VerifyNoChanges = true,
+    });
+});
+
+Task("Build")
+    .IsDependentOn("Clean")
+    .IsDependentOn("Lint")
+    .Does(context =>
+{
+    DotNetBuild("./Spectre.Tui.Doodads.slnx", new DotNetBuildSettings
+    {
+        Configuration = configuration,
+        Verbosity = DotNetVerbosity.Minimal,
+        NoLogo = true,
+        NoIncremental = context.HasArgument("rebuild"),
+        MSBuildSettings = new DotNetMSBuildSettings()
+            .TreatAllWarningsAs(MSBuildTreatAllWarningsAs.Error)
+    });
+});
+
+Task("Test")
+    .IsDependentOn("Build")
+    .Does(context =>
+{
+    DotNetTest("./Spectre.Tui.Doodads.slnx", new DotNetTestSettings
+    {
+        Configuration = configuration,
+        Verbosity = DotNetVerbosity.Minimal,
+        NoLogo = true,
+        NoRestore = true,
+        NoBuild = true,
+    });
+});
+
+Task("Package")
+    .IsDependentOn("Test")
+    .Does(context =>
+{
+    context.DotNetPack($"./Spectre.Tui.Doodads.slnx", new DotNetPackSettings
+    {
+        Configuration = configuration,
+        Verbosity = DotNetVerbosity.Minimal,
+        NoLogo = true,
+        NoRestore = true,
+        NoBuild = true,
+        OutputDirectory = "./.artifacts",
+        MSBuildSettings = new DotNetMSBuildSettings()
+            .TreatAllWarningsAs(MSBuildTreatAllWarningsAs.Error)
+    });
+});
+
+Task("Publish-NuGet")
+    .WithCriteria(ctx => BuildSystem.IsRunningOnGitHubActions, "Not running on GitHub Actions")
+    .IsDependentOn("Package")
+    .Does(context =>
+{
+    var apiKey = Argument<string?>("nuget-key", null);
+    if (string.IsNullOrWhiteSpace(apiKey))
+    {
+        throw new CakeException("No NuGet API key was provided.");
+    }
+
+    foreach (var file in context.GetFiles("./.artifacts/*.nupkg"))
+    {
+        context.Information("Publishing {0}...", file.GetFilename().FullPath);
+        DotNetNuGetPush(file.FullPath, new DotNetNuGetPushSettings
+        {
+            Source = "https://api.nuget.org/v3/index.json",
+            ApiKey = apiKey,
+        });
+    }
+});
+
+////////////////////////////////////////////////////////////////
+// Targets
+
+Task("Publish")
+    .IsDependentOn("Publish-NuGet");
+
+Task("Default")
+    .IsDependentOn("Package");
+
+////////////////////////////////////////////////////////////////
+// Execution
+
+RunTarget(target);

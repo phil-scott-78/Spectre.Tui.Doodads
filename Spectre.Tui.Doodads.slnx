@@ -1,0 +1,25 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Build/">
+    <File Path="dotnet-tools.json" />
+    <File Path="global.json" />
+    <File Path=".editorconfig" />
+    <File Path="src\Directory.Build.props" />
+    <File Path="src\Directory.Packages.props" />
+    <File Path="build.cs" />
+  </Folder>
+  <Project Path="src\Spectre.Tui.Doodads\Spectre.Tui.Doodads.csproj" />
+  <Project Path="src\Spectre.Tui.Doodads.Tests\Spectre.Tui.Doodads.Tests.csproj" />
+  <Project Path="src/Sandbox.AspNet/Sandbox.AspNet.csproj" />
+  <Project Path="src/Sandbox.Download/Sandbox.Download.csproj" />
+  <Project Path="src\Sandbox.Doodads\Sandbox.Doodads.csproj">
+    <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />
+    <Configuration Solution="Debug|x86" Project="Debug|Any CPU" />
+    <Configuration Solution="Release|x64" Project="Release|Any CPU" />
+    <Configuration Solution="Release|x86" Project="Release|Any CPU" />
+  </Project>
+</Solution>

@@ -1,0 +1,61 @@
+using Spectre.Tui.Doodads.Rendering;
+
+namespace Spectre.Tui.Doodads.Tests.Spectre.Tui.Testing;
+
+public sealed class TuiFixture
+{
+    private readonly ITestTerminal _terminal;
+    private readonly Renderer _renderer;
+
+    public TuiFixture(Size? size = null)
+    {
+        _terminal = new SimpleTestTerminal(size ?? new Size(80, 25));
+        _renderer = new Renderer(_terminal);
+    }
+
+    public TuiFixture(ITestTerminal terminal)
+    {
+        _terminal = terminal ?? throw new ArgumentNullException(nameof(terminal));
+        _renderer = new Renderer(_terminal);
+    }
+
+    public string Render(IWidget widget)
+    {
+        _renderer.Draw((frame, _) => frame.Render(widget));
+        return _terminal.Output;
+    }
+
+    public string Render(IRenderable renderable)
+    {
+        _renderer.Draw((frame, _) =>
+        {
+            IRenderSurface BuildSurface(RenderContext ctx)
+            {
+                return new RenderContextSurface(ctx, BuildSurface);
+            }
+
+            renderable.Render(BuildSurface(frame));
+        });
+        return _terminal.Output;
+    }
+
+    public string Render(Action<IRenderSurface> action)
+    {
+        _renderer.Draw((frame, _) =>
+        {
+            IRenderSurface BuildSurface(RenderContext ctx)
+            {
+                return new RenderContextSurface(ctx, BuildSurface);
+            }
+
+            action(BuildSurface(frame));
+        });
+        return _terminal.Output;
+    }
+
+    public string Render(Action<RenderContext> action)
+    {
+        _renderer.Draw((frame, _) => action(frame));
+        return _terminal.Output;
+    }
+}

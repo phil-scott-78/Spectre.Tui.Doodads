@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet test:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet sln add:*)",
+      "Bash(dotnet run:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(dotnet pack:*)",
+      "Bash(powershell:*)",
+      "Bash(dotnet new:*)",
+      "Bash(dotnet sln:*)",
+      "Bash(dotnet add package:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:)",
+      "WebFetch(domain:www.nuget.org)",
+      "Bash(dotnet list:*)",
+      "Bash(dotnet format:*)",
+      "WebFetch(domain:www.meziantou.net)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

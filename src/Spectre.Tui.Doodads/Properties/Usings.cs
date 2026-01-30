@@ -1,0 +1,10 @@
+global using System.Collections.Immutable;
+global using System.Globalization;
+global using System.Runtime.CompilerServices;
+global using System.Text;
+global using System.Threading.Channels;
+global using Spectre.Console;
+global using Spectre.Tui;
+global using Spectre.Tui.Doodads.Messages;
+global using Spectre.Tui.Doodads.Rendering;
+global using SysConsole = System.Console;
