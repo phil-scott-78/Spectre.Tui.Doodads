@@ -25,3 +25,6 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*.cs]
+dotnet_diagnostic.RCS1090.severity = none

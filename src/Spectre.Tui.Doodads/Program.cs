@@ -64,7 +64,7 @@ public static class Program
             // Bootstrap: trigger initial render by posting ReadyMessage
             // This ensures the first loop iteration runs even if Init() returned null
             // and no input has arrived yet
-            await messageQueue.Writer.WriteAsync(new ReadyMessage(), cts.Token).ConfigureAwait(false);
+            await messageQueue.Writer.WriteAsync(new ReadyMessage(), cts.Token);
 
             // Start input pump - posts input events to the unified channel
             var inputPumpTask = RunInputPumpAsync(inputReader, messageQueue.Writer, cts.Token);
@@ -73,7 +73,7 @@ public static class Program
             try
             {
                 await foreach (var message in messageQueue.Reader.ReadAllAsync(cts.Token)
-                    .ConfigureAwait(false))
+                    )
                 {
                     // Force re-render when terminal is resized — viewport dimensions changed
                     // even if the model itself didn't change
@@ -125,12 +125,12 @@ public static class Program
             }
 
             // Stop input pump and wait for it to complete
-            await cts.CancelAsync().ConfigureAwait(false);
+            await cts.CancelAsync();
             messageQueue.Writer.Complete();
 
             try
             {
-                await inputPumpTask.ConfigureAwait(false);
+                await inputPumpTask;
             }
             catch (OperationCanceledException)
             {
@@ -208,10 +208,10 @@ public static class Program
         {
             try
             {
-                var result = await command(ct).ConfigureAwait(false);
+                var result = await command(ct);
                 if (result is not null)
                 {
-                    await writer.WriteAsync(result, ct).ConfigureAwait(false);
+                    await writer.WriteAsync(result, ct);
                 }
             }
             catch (OperationCanceledException)
@@ -224,7 +224,7 @@ public static class Program
                 {
                     await writer.WriteAsync(
                         new CommandErrorMessage { Exception = ex },
-                        CancellationToken.None).ConfigureAwait(false);
+                        CancellationToken.None);
                 }
                 catch (ChannelClosedException)
                 {
@@ -243,15 +243,15 @@ public static class Program
         {
             while (!ct.IsCancellationRequested)
             {
-                var message = await reader.ReadAsync(ct).ConfigureAwait(false);
+                var message = await reader.ReadAsync(ct);
                 if (message is not null)
                 {
-                    await writer.WriteAsync(message, ct).ConfigureAwait(false);
+                    await writer.WriteAsync(message, ct);
                 }
                 else
                 {
                     // No input available - small delay before next poll
-                    await Task.Delay(10, ct).ConfigureAwait(false);
+                    await Task.Delay(10, ct);
                 }
             }
         }

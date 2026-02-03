@@ -358,7 +358,7 @@ public record SpeedTestModel : IDoodad<SpeedTestModel>, ISizedRenderable
             try
             {
                 var service = new OoklaSpeedtest();
-                var servers = await service.GetServersAsync(ct).ConfigureAwait(false);
+                var servers = await service.GetServersAsync(ct);
                 return new ServersFoundMessage { Service = service, Servers = servers };
             }
             catch (OperationCanceledException)
@@ -389,7 +389,7 @@ public record SpeedTestModel : IDoodad<SpeedTestModel>, ISizedRenderable
         {
             try
             {
-                var result = await service.GetFastestServerByLatencyAsync(servers, ct).ConfigureAwait(false);
+                var result = await service.GetFastestServerByLatencyAsync(servers, ct);
                 return new FastestServerFoundMessage { Service = service, LatencyResult = result };
             }
             catch (OperationCanceledException)
@@ -431,7 +431,7 @@ public record SpeedTestModel : IDoodad<SpeedTestModel>, ISizedRenderable
             {
                 try
                 {
-                    var result = await service.GetDownloadSpeedAsync(server, bridge, ct).ConfigureAwait(false);
+                    var result = await service.GetDownloadSpeedAsync(server, bridge, ct);
                     bridge.SetResult(result);
                 }
                 catch (OperationCanceledException)
@@ -521,7 +521,7 @@ public record SpeedTestModel : IDoodad<SpeedTestModel>, ISizedRenderable
             {
                 try
                 {
-                    var result = await service.GetUploadSpeedAsync(server, bridge, ct).ConfigureAwait(false);
+                    var result = await service.GetUploadSpeedAsync(server, bridge, ct);
                     bridge.SetResult(result);
                 }
                 catch (OperationCanceledException)

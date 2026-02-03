@@ -44,7 +44,7 @@ public static class Commands
             {
                 try
                 {
-                    return await c(ct).ConfigureAwait(false);
+                    return await c(ct);
                 }
                 catch (OperationCanceledException)
                 {
@@ -56,7 +56,7 @@ public static class Commands
                 }
             });
 
-            var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+            var results = await Task.WhenAll(tasks);
             var messages = results.Where(m => m is not null).Cast<Message>().ToList();
             return messages.Count switch
             {
@@ -89,7 +89,7 @@ public static class Commands
             Message? first;
             try
             {
-                first = await filtered[0](ct).ConfigureAwait(false);
+                first = await filtered[0](ct);
             }
             catch (OperationCanceledException)
             {
@@ -113,7 +113,7 @@ public static class Commands
     {
         return async ct =>
         {
-            await Task.Delay(interval, ct).ConfigureAwait(false);
+            await Task.Delay(interval, ct);
             return createMessage(DateTimeOffset.UtcNow);
         };
     }
