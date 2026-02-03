@@ -61,40 +61,33 @@ public static class Program
                 ScheduleCommand(initCmd, messageQueue.Writer, cts.Token);
             }
 
-            // Main event loop
-            while (!cts.Token.IsCancellationRequested)
-            {
-                try
-                {
-                    // Read input
-                    var inputMessage = await inputReader.ReadAsync(cts.Token)
-                        .ConfigureAwait(false);
-                    if (inputMessage is not null)
-                    {
-                        var (updated, shouldQuit) = ProcessMessage(model, inputMessage, messageQueue.Writer, cts.Token);
-                        model = updated;
-                        if (shouldQuit)
-                        {
-                            break;
-                        }
-                    }
+            // Bootstrap: trigger initial render by posting ReadyMessage
+            // This ensures the first loop iteration runs even if Init() returned null
+            // and no input has arrived yet
+            await messageQueue.Writer.WriteAsync(new ReadyMessage(), cts.Token).ConfigureAwait(false);
 
+            // Start input pump - posts input events to the unified channel
+            var inputPumpTask = RunInputPumpAsync(inputReader, messageQueue.Writer, cts.Token);
+
+            // Event-driven main loop - wakes only when messages arrive
+            try
+            {
+                await foreach (var message in messageQueue.Reader.ReadAllAsync(cts.Token)
+                    .ConfigureAwait(false))
+                {
                     // Force re-render when terminal is resized — viewport dimensions changed
                     // even if the model itself didn't change
-                    if (inputMessage is WindowSizeMessage)
+                    if (message is WindowSizeMessage)
                     {
                         lastRenderedModel = default;
                     }
 
-                    // Drain message queue
-                    while (messageQueue.Reader.TryRead(out var queuedMessage))
+                    var (updated, shouldQuit) = ProcessMessage(model, message, messageQueue.Writer, cts.Token);
+                    model = updated;
+
+                    if (shouldQuit)
                     {
-                        var (updated, shouldQuit) = ProcessMessage(model, queuedMessage, messageQueue.Writer, cts.Token);
-                        model = updated;
-                        if (shouldQuit)
-                        {
-                            goto exit;
-                        }
+                        break;
                     }
 
                     // Render when model has changed
@@ -124,16 +117,26 @@ public static class Program
                             lastRenderedModel = currentModel;
                         }
                     }
-
-                    await Task.Delay(1, cts.Token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
-                {
-                    break;
                 }
             }
+            catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
+            {
+                // Expected on shutdown
+            }
 
-exit:
+            // Stop input pump and wait for it to complete
+            await cts.CancelAsync().ConfigureAwait(false);
+            messageQueue.Writer.Complete();
+
+            try
+            {
+                await inputPumpTask.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected
+            }
+
             return model;
         }
         finally
@@ -229,5 +232,36 @@ exit:
                 }
             }
         }, ct);
+    }
+
+    private static async Task RunInputPumpAsync(
+        IInputReader reader,
+        ChannelWriter<Message> writer,
+        CancellationToken ct)
+    {
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                var message = await reader.ReadAsync(ct).ConfigureAwait(false);
+                if (message is not null)
+                {
+                    await writer.WriteAsync(message, ct).ConfigureAwait(false);
+                }
+                else
+                {
+                    // No input available - small delay before next poll
+                    await Task.Delay(10, ct).ConfigureAwait(false);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on shutdown
+        }
+        catch (ChannelClosedException)
+        {
+            // Channel closed during shutdown
+        }
     }
 }
