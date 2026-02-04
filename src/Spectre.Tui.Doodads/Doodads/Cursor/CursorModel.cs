@@ -55,6 +55,12 @@ public record CursorModel : IDoodad<CursorModel>
     /// </summary>
     internal int Tag { get; init; }
 
+    /// <summary>
+    /// Gets a value indicating whether the cursor is idle (not recently active).
+    /// When idle, the cursor blinks. When active (typing), it stays solid.
+    /// </summary>
+    internal bool IsIdle { get; init; } = true;
+
     /// <inheritdoc />
     public Command? Init()
     {
@@ -80,6 +86,10 @@ public record CursorModel : IDoodad<CursorModel>
             case CursorBlinkMessage blink when blink.Id == Id && blink.Tag == Tag:
                 var toggled = this with { Visible = !Visible };
                 return (toggled, toggled.BlinkCommand());
+
+            case CursorIdleMessage idle when idle.Id == Id && idle.Tag == Tag:
+                var idleModel = this with { IsIdle = true };
+                return (idleModel, idleModel.BlinkCommand());
 
             default:
                 return (this, null);
@@ -139,10 +149,42 @@ public record CursorModel : IDoodad<CursorModel>
         return this with { Character = character, TextStyle = textStyle };
     }
 
-    private Command BlinkCommand()
+    /// <summary>
+    /// Resets the idle timer, keeping the cursor visible while typing.
+    /// Called by input components when a key is pressed.
+    /// </summary>
+    public (CursorModel Model, Command? Command) ResetIdle()
     {
-        var id = Id;
-        var tag = Tag;
-        return Commands.Tick(BlinkSpeed, _ => new CursorBlinkMessage { Id = id, Tag = tag });
+        if (Mode != CursorMode.Blink || !Focused)
+        {
+            return (this, null);
+        }
+
+        // Increment Tag to cancel pending blink/idle messages, set visible and not idle
+        var model = this with { Visible = true, IsIdle = false, Tag = Tag + 1 };
+
+        // Schedule transition to idle after BlinkSpeed timeout
+        var id = model.Id;
+        var tag = model.Tag;
+        var cmd = Commands.Tick(BlinkSpeed, _ => new CursorIdleMessage { Id = id, Tag = tag });
+        return (model, cmd);
+    }
+
+    private Command? BlinkCommand()
+    {
+        // Don't blink while actively typing (not idle)
+        if (Mode == CursorMode.Blink && !IsIdle)
+        {
+            return null;
+        }
+
+        if (Mode == CursorMode.Blink && Focused)
+        {
+            var id = Id;
+            var tag = Tag;
+            return Commands.Tick(BlinkSpeed, _ => new CursorBlinkMessage { Id = id, Tag = tag });
+        }
+
+        return null;
     }
 }

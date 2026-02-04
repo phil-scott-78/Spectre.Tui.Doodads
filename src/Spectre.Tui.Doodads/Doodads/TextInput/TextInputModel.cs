@@ -488,89 +488,101 @@ public record TextInputModel : IDoodad<TextInputModel>, ISizedRenderable
         // Tab: accept suggestion or cycle through suggestions
         if (km.Key == Key.Tab && ShowSuggestions && MatchedSuggestionIndices.Count > 0)
         {
-            return (AcceptSuggestion(), null);
+            return ResetIdleAfterKey(AcceptSuggestion());
         }
 
         if (km.Key == Key.ShiftTab && ShowSuggestions && MatchedSuggestionIndices.Count > 0)
         {
-            return (PrevSuggestion(), null);
+            return ResetIdleAfterKey(PrevSuggestion());
         }
 
         // Character input
         if (km is { Key: Key.Char, Runes.Length: > 0 })
         {
-            return InsertRunes(km.Runes);
+            return ResetIdleAfterKey(InsertRunes(km.Runes));
         }
 
         if (km.Key == Key.Space)
         {
-            return InsertRunes([new Rune(' ')]);
+            return ResetIdleAfterKey(InsertRunes([new Rune(' ')]));
         }
 
         // Cursor movement
         if (KeyMap.CharForward.Matches(km) && !km.Alt)
         {
-            return (MoveForward(), null);
+            return ResetIdleAfterKey(MoveForward());
         }
 
         if (KeyMap.CharBackward.Matches(km) && !km.Alt)
         {
-            return (MoveBackward(), null);
+            return ResetIdleAfterKey(MoveBackward());
         }
 
         // Word movement (Alt + arrow or Alt + f/b/d)
         if (km.Alt && KeyMap.WordForward.Matches(km))
         {
-            return (MoveWordForward(), null);
+            return ResetIdleAfterKey(MoveWordForward());
         }
 
         if (km.Alt && KeyMap.WordBackward.Matches(km))
         {
-            return (MoveWordBackward(), null);
+            return ResetIdleAfterKey(MoveWordBackward());
         }
 
         if (km.Alt && KeyMap.DeleteWordForward.Matches(km))
         {
-            return (DeleteWordForward(), null);
+            return ResetIdleAfterKey(DeleteWordForward());
         }
 
         if (KeyMap.LineStart.Matches(km))
         {
-            return (MoveToStart(), null);
+            return ResetIdleAfterKey(MoveToStart());
         }
 
         if (KeyMap.LineEnd.Matches(km))
         {
-            return (MoveToEnd(), null);
+            return ResetIdleAfterKey(MoveToEnd());
         }
 
         // Deletion
         if (KeyMap.DeleteCharBackward.Matches(km))
         {
-            return (DeleteBackward(), null);
+            return ResetIdleAfterKey(DeleteBackward());
         }
 
         if (KeyMap.DeleteCharForward.Matches(km) && !km.Alt)
         {
-            return (DeleteForward(), null);
+            return ResetIdleAfterKey(DeleteForward());
         }
 
         if (KeyMap.DeleteWordBackward.Matches(km))
         {
-            return (DeleteWordBackward(), null);
+            return ResetIdleAfterKey(DeleteWordBackward());
         }
 
         if (KeyMap.DeleteToLineStart.Matches(km))
         {
-            return (DeleteToStart(), null);
+            return ResetIdleAfterKey(DeleteToStart());
         }
 
         if (KeyMap.DeleteToLineEnd.Matches(km))
         {
-            return (DeleteToEnd(), null);
+            return ResetIdleAfterKey(DeleteToEnd());
         }
 
         return (this, null);
+    }
+
+    private (TextInputModel Model, Command? Command) ResetIdleAfterKey(TextInputModel updatedModel)
+    {
+        var (cursor, cursorCmd) = updatedModel.Cursor.ResetIdle();
+        return (updatedModel with { Cursor = cursor }, cursorCmd);
+    }
+
+    private (TextInputModel Model, Command? Command) ResetIdleAfterKey((TextInputModel Model, Command? Command) result)
+    {
+        var (cursor, cursorCmd) = result.Model.Cursor.ResetIdle();
+        return (result.Model with { Cursor = cursor }, Commands.Batch(result.Command, cursorCmd));
     }
 
     private (TextInputModel Model, Command? Command) InsertRunes(Rune[] runes)

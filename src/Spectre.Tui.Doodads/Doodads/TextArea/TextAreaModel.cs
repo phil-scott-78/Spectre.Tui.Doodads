@@ -502,106 +502,106 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
     {
         if (KeyMap.CharacterForward.Matches(km))
         {
-            return (MoveRight(), null);
+            return ResetIdleAfterKey(MoveRight());
         }
 
         if (KeyMap.CharacterBackward.Matches(km))
         {
-            return (MoveLeft(), null);
+            return ResetIdleAfterKey(MoveLeft());
         }
 
         if (KeyMap.LineUp.Matches(km))
         {
-            return (MoveUp(), null);
+            return ResetIdleAfterKey(MoveUp());
         }
 
         if (KeyMap.LineDown.Matches(km))
         {
-            return (MoveDown(), null);
+            return ResetIdleAfterKey(MoveDown());
         }
 
         if (KeyMap.PageUp.Matches(km))
         {
-            return (PageUpMove(), null);
+            return ResetIdleAfterKey(PageUpMove());
         }
 
         if (KeyMap.PageDown.Matches(km))
         {
-            return (PageDownMove(), null);
+            return ResetIdleAfterKey(PageDownMove());
         }
 
         if (KeyMap.LineStart.Matches(km))
         {
-            return (this with { Col = 0 }, null);
+            return ResetIdleAfterKey(this with { Col = 0 });
         }
 
         if (KeyMap.LineEnd.Matches(km))
         {
-            return (this with { Col = Lines[Row].Length }, null);
+            return ResetIdleAfterKey(this with { Col = Lines[Row].Length });
         }
 
         if (KeyMap.DeleteCharBackward.Matches(km))
         {
-            return (DeleteBackward(), null);
+            return ResetIdleAfterKey(DeleteBackward());
         }
 
         if (KeyMap.DeleteCharForward.Matches(km))
         {
-            return (DeleteForward(), null);
+            return ResetIdleAfterKey(DeleteForward());
         }
 
         if (KeyMap.DeleteToEnd.Matches(km))
         {
-            return (DeleteToLineEnd(), null);
+            return ResetIdleAfterKey(DeleteToLineEnd());
         }
 
         if (KeyMap.DeleteToStart.Matches(km))
         {
-            return (DeleteToLineStart(), null);
+            return ResetIdleAfterKey(DeleteToLineStart());
         }
 
         if (KeyMap.InsertNewline.Matches(km))
         {
-            return (InsertNewline(), null);
+            return ResetIdleAfterKey(InsertNewline());
         }
 
         // Transpose character backward (ctrl+t)
         if (KeyMap.TransposeCharacterBackward.Matches(km))
         {
-            return (TransposeCharacterBackward(), null);
+            return ResetIdleAfterKey(TransposeCharacterBackward());
         }
 
         // Paste (ctrl+v)
         if (KeyMap.Paste.Matches(km))
         {
-            return (PasteFromYankBuffer(), null);
+            return ResetIdleAfterKey(PasteFromYankBuffer());
         }
 
         // Alt key combinations for word transforms
         if (km.Alt && KeyMap.UppercaseWordForward.Matches(km))
         {
-            return (UppercaseWordForward(), null);
+            return ResetIdleAfterKey(UppercaseWordForward());
         }
 
         if (km.Alt && KeyMap.LowercaseWordForward.Matches(km))
         {
-            return (LowercaseWordForward(), null);
+            return ResetIdleAfterKey(LowercaseWordForward());
         }
 
         if (km.Alt && KeyMap.CapitalizeWordForward.Matches(km))
         {
-            return (CapitalizeWordForward(), null);
+            return ResetIdleAfterKey(CapitalizeWordForward());
         }
 
         // Input begin/end (ctrl+home / ctrl+end)
         if (km is { Ctrl: true, Key: Key.Home })
         {
-            return (InputBegin(), null);
+            return ResetIdleAfterKey(InputBegin());
         }
 
         if (km is { Ctrl: true, Key: Key.End })
         {
-            return (InputEnd(), null);
+            return ResetIdleAfterKey(InputEnd());
         }
 
         // Character input
@@ -613,15 +613,21 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
                 model = model.InsertRuneInternal(rune);
             }
 
-            return (model, null);
+            return ResetIdleAfterKey(model);
         }
 
         if (km.Key == Key.Space)
         {
-            return (InsertRuneInternal(new Rune(' ')), null);
+            return ResetIdleAfterKey(InsertRuneInternal(new Rune(' ')));
         }
 
         return (this, null);
+    }
+
+    private (TextAreaModel Model, Command? Command) ResetIdleAfterKey(TextAreaModel updatedModel)
+    {
+        var (cursor, cursorCmd) = updatedModel.Cursor.ResetIdle();
+        return (updatedModel with { Cursor = cursor }, cursorCmd);
     }
 
     private TextAreaModel InsertRuneInternal(Rune rune)
