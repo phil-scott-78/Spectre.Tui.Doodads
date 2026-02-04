@@ -500,6 +500,40 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
 
     private (TextAreaModel Model, Command? Command) HandleKey(KeyMessage km)
     {
+        // 1. Document navigation (Ctrl+Home/End) - most specific, check first
+        if (km is { Ctrl: true, Key: Key.Home })
+        {
+            return ResetIdleAfterKey(InputBegin());
+        }
+
+        if (km is { Ctrl: true, Key: Key.End })
+        {
+            return ResetIdleAfterKey(InputEnd());
+        }
+
+        // 2. Word movement with Ctrl (Windows style) - before plain arrows
+        if (km is { Ctrl: true, Key: Key.Right })
+        {
+            return ResetIdleAfterKey(MoveWordForward());
+        }
+
+        if (km is { Ctrl: true, Key: Key.Left })
+        {
+            return ResetIdleAfterKey(MoveWordBackward());
+        }
+
+        // 3. Word movement with Alt (Unix/Mac style)
+        if (km.Alt && KeyMap.WordForward.Matches(km))
+        {
+            return ResetIdleAfterKey(MoveWordForward());
+        }
+
+        if (km.Alt && KeyMap.WordBackward.Matches(km))
+        {
+            return ResetIdleAfterKey(MoveWordBackward());
+        }
+
+        // 4. Plain character/line movement (after modifier checks)
         if (KeyMap.CharacterForward.Matches(km))
         {
             return ResetIdleAfterKey(MoveRight());
@@ -550,6 +584,17 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
             return ResetIdleAfterKey(DeleteForward());
         }
 
+        // Delete word operations
+        if (KeyMap.DeleteWordBackward.Matches(km))
+        {
+            return ResetIdleAfterKey(DeleteWordBackward());
+        }
+
+        if (km.Alt && KeyMap.DeleteWordForward.Matches(km))
+        {
+            return ResetIdleAfterKey(DeleteWordForward());
+        }
+
         if (KeyMap.DeleteToEnd.Matches(km))
         {
             return ResetIdleAfterKey(DeleteToLineEnd());
@@ -591,17 +636,6 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
         if (km.Alt && KeyMap.CapitalizeWordForward.Matches(km))
         {
             return ResetIdleAfterKey(CapitalizeWordForward());
-        }
-
-        // Input begin/end (ctrl+home / ctrl+end)
-        if (km is { Ctrl: true, Key: Key.Home })
-        {
-            return ResetIdleAfterKey(InputBegin());
-        }
-
-        if (km is { Ctrl: true, Key: Key.End })
-        {
-            return ResetIdleAfterKey(InputEnd());
         }
 
         // Character input
@@ -789,6 +823,130 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
         }
 
         return this;
+    }
+
+    private TextAreaModel MoveWordForward()
+    {
+        var line = Lines[Row];
+        var col = Col;
+
+        // Skip current word characters
+        while (col < line.Length && !Rune.IsWhiteSpace(line[col]))
+        {
+            col++;
+        }
+
+        // Skip whitespace
+        while (col < line.Length && Rune.IsWhiteSpace(line[col]))
+        {
+            col++;
+        }
+
+        // If at end of line and not last line, go to start of next line
+        if (col >= line.Length && Row < Lines.Length - 1)
+        {
+            return EnsureVisible(this with { Row = Row + 1, Col = 0 });
+        }
+
+        return EnsureVisible(this with { Col = col });
+    }
+
+    private TextAreaModel MoveWordBackward()
+    {
+        var col = Col;
+
+        // If at start of line and not first line, go to end of previous line
+        if (col == 0 && Row > 0)
+        {
+            return EnsureVisible(this with
+            {
+                Row = Row - 1,
+                Col = Lines[Row - 1].Length,
+            });
+        }
+
+        var line = Lines[Row];
+
+        // Skip whitespace behind cursor
+        while (col > 0 && Rune.IsWhiteSpace(line[col - 1]))
+        {
+            col--;
+        }
+
+        // Skip word characters
+        while (col > 0 && !Rune.IsWhiteSpace(line[col - 1]))
+        {
+            col--;
+        }
+
+        return EnsureVisible(this with { Col = col });
+    }
+
+    private TextAreaModel DeleteWordBackward()
+    {
+        if (Col == 0 && Row == 0)
+        {
+            return this;
+        }
+
+        // If at start of line, join with previous line
+        if (Col == 0 && Row > 0)
+        {
+            return DeleteBackward();
+        }
+
+        var line = Lines[Row];
+        var start = Col;
+
+        // Skip whitespace behind cursor
+        while (start > 0 && Rune.IsWhiteSpace(line[start - 1]))
+        {
+            start--;
+        }
+
+        // Skip word characters
+        while (start > 0 && !Rune.IsWhiteSpace(line[start - 1]))
+        {
+            start--;
+        }
+
+        var newLine = line.RemoveRange(start, Col - start);
+        var newLines = Lines.SetItem(Row, newLine);
+        return EnsureVisible(this with { Lines = newLines, Col = start });
+    }
+
+    private TextAreaModel DeleteWordForward()
+    {
+        var line = Lines[Row];
+
+        // If at end of line, join with next line
+        if (Col >= line.Length && Row < Lines.Length - 1)
+        {
+            return DeleteForward();
+        }
+
+        if (Col >= line.Length)
+        {
+            return this;
+        }
+
+        var end = Col;
+
+        // Skip current word characters
+        while (end < line.Length && !Rune.IsWhiteSpace(line[end]))
+        {
+            end++;
+        }
+
+        // Skip whitespace
+        while (end < line.Length && Rune.IsWhiteSpace(line[end]))
+        {
+            end++;
+        }
+
+        var newLine = line.RemoveRange(Col, end - Col);
+        var newLines = Lines.SetItem(Row, newLine);
+        return this with { Lines = newLines };
     }
 
     private TextAreaModel PageUpMove()

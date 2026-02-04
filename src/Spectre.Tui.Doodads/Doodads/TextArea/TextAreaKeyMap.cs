@@ -19,11 +19,20 @@ public sealed class TextAreaKeyMap : IKeyMap
     public KeyBinding LineDown { get; init; } = KeyBinding.For(Key.Down, Key.CtrlN)
         .WithHelp("↓", "move down");
 
-    public KeyBinding WordForward { get; init; } = KeyBinding.For(Key.CtrlF)
-        .WithHelp("alt+f", "word forward");
+    public KeyBinding WordForward { get; init; } = KeyBinding.For(Key.Right, Key.Char)
+        .WithRunes(new Rune('f'))
+        .WithHelp("alt+→/alt+f", "word forward");
 
-    public KeyBinding WordBackward { get; init; } = KeyBinding.For(Key.CtrlB)
-        .WithHelp("alt+b", "word backward");
+    public KeyBinding WordBackward { get; init; } = KeyBinding.For(Key.Left, Key.Char)
+        .WithRunes(new Rune('b'))
+        .WithHelp("alt+←/alt+b", "word backward");
+
+    public KeyBinding DeleteWordBackward { get; init; } = KeyBinding.For(Key.CtrlW)
+        .WithHelp("ctrl+w", "delete word backward");
+
+    public KeyBinding DeleteWordForward { get; init; } = KeyBinding.For(Key.Delete, Key.Char)
+        .WithRunes(new Rune('d'))
+        .WithHelp("alt+d", "delete word forward");
 
     public KeyBinding LineStart { get; init; } = KeyBinding.For(Key.Home, Key.CtrlA)
         .WithHelp("home", "line start");
@@ -90,11 +99,11 @@ public sealed class TextAreaKeyMap : IKeyMap
         yield return
         [
             CharacterForward, CharacterBackward, LineUp, LineDown,
-            LineStart, LineEnd, PageUp, PageDown,
+            WordForward, WordBackward, LineStart, LineEnd, PageUp, PageDown,
         ];
         yield return
         [
-            DeleteCharForward, DeleteCharBackward,
+            DeleteCharForward, DeleteCharBackward, DeleteWordForward, DeleteWordBackward,
             DeleteToEnd, DeleteToStart, InsertNewline,
         ];
     }
