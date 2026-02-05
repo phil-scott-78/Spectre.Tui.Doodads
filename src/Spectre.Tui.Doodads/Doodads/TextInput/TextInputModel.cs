@@ -1,4 +1,5 @@
 using Spectre.Tui.Doodads.Doodads.Cursor;
+using Spectre.Tui.Doodads.Doodads.RuneUtil;
 
 namespace Spectre.Tui.Doodads.Doodads.TextInput;
 
@@ -195,7 +196,7 @@ public record TextInputModel : IDoodad<TextInputModel>, ISizedRenderable
         // Show placeholder when empty and not focused
         if (Value.IsEmpty && !Focused)
         {
-            surface.SetString(x, 0, TruncateToWidth(Placeholder, availableWidth), PlaceholderStyle);
+            surface.SetString(x, 0, UnicodeWidth.TruncateToWidth(Placeholder, availableWidth), PlaceholderStyle);
             return;
         }
 
@@ -207,7 +208,7 @@ public record TextInputModel : IDoodad<TextInputModel>, ISizedRenderable
             surface.Render(Cursor.SetChar(cursorChar, PlaceholderStyle), new Rectangle(x, 0, 1, 1));
             if (Placeholder.Length > 1)
             {
-                surface.SetString(x + 1, 0, TruncateToWidth(Placeholder[1..], availableWidth - 1), PlaceholderStyle);
+                surface.SetString(x + 1, 0, UnicodeWidth.TruncateToWidth(Placeholder[1..], availableWidth - 1), PlaceholderStyle);
             }
 
             return;
@@ -245,7 +246,7 @@ public record TextInputModel : IDoodad<TextInputModel>, ISizedRenderable
                 surface.SetString(renderX, 0, displayChar, TextStyle);
             }
 
-            renderX += UnicodeWidth(displayChar);
+            renderX += UnicodeWidth.GetDisplayWidth(displayChar);
         }
 
         // If cursor is at the end of the value
@@ -267,7 +268,7 @@ public record TextInputModel : IDoodad<TextInputModel>, ISizedRenderable
                         var maxRemaining = availableWidth - (renderX - x);
                         if (maxRemaining > 0)
                         {
-                            surface.SetString(renderX, 0, TruncateToWidth(remaining, maxRemaining), CompletionStyle);
+                            surface.SetString(renderX, 0, UnicodeWidth.TruncateToWidth(remaining, maxRemaining), CompletionStyle);
                         }
                     }
                 }
@@ -847,7 +848,7 @@ public record TextInputModel : IDoodad<TextInputModel>, ISizedRenderable
 
     private TextInputModel AdjustOffset()
     {
-        var promptWidth = CalculateStringWidth(Prompt);
+        var promptWidth = UnicodeWidth.GetDisplayWidth(Prompt);
         var baseWidth = Width > 0 ? Width : MinWidth;
         var effectiveWidth = MaxWidth > 0 ? Math.Min(baseWidth, MaxWidth) : baseWidth;
         var availableWidth = effectiveWidth - promptWidth;
@@ -954,58 +955,7 @@ public record TextInputModel : IDoodad<TextInputModel>, ISizedRenderable
             return 0;
         }
 
-        return Math.Max(1, UnicodeWidth(Value[runeIndex].ToString()));
-    }
-
-    private static int CalculateStringWidth(string text)
-    {
-        var width = 0;
-        foreach (var rune in text.EnumerateRunes())
-        {
-            width += Math.Max(1, UnicodeWidth(rune.ToString()));
-        }
-
-        return width;
-    }
-
-    private static int UnicodeWidth(string text)
-    {
-        var width = 0;
-        foreach (var rune in text.EnumerateRunes())
-        {
-            width += Wcwidth.UnicodeCalculator.GetWidth(rune) switch
-            {
-                -1 => 0,
-                var w => w,
-            };
-        }
-
-        return Math.Max(width, text.Length > 0 ? 1 : 0);
-    }
-
-    private static string TruncateToWidth(string text, int maxWidth)
-    {
-        var sb = new StringBuilder();
-        var width = 0;
-
-        foreach (var rune in text.EnumerateRunes())
-        {
-            var runeWidth = Math.Max(1, Wcwidth.UnicodeCalculator.GetWidth(rune) switch
-            {
-                -1 => 0,
-                var w => w,
-            });
-
-            if (width + runeWidth > maxWidth)
-            {
-                break;
-            }
-
-            sb.Append(rune);
-            width += runeWidth;
-        }
-
-        return sb.ToString();
+        return UnicodeWidth.GetDisplayWidth(Value[runeIndex]);
     }
 
     private static IEnumerable<Rune> EnumerateRunes(string text)

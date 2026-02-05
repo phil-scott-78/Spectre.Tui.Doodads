@@ -23,7 +23,7 @@ public record Label : ISizedRenderable
     /// Gets the minimum display width in terminal columns, computed from <see cref="Text"/>
     /// using Unicode character widths.
     /// </summary>
-    public int MinWidth => UnicodeWidth(Text);
+    public int MinWidth => RuneUtil.UnicodeWidth.GetWidth(Text);
 
     /// <summary>
     /// Gets the minimum height of the label (always 1).
@@ -61,20 +61,5 @@ public record Label : ISizedRenderable
     public void Render(IRenderSurface surface)
     {
         surface.SetString(0, 0, Text, Style);
-    }
-
-    private static int UnicodeWidth(string text)
-    {
-        var width = 0;
-        foreach (var rune in text.EnumerateRunes())
-        {
-            width += Wcwidth.UnicodeCalculator.GetWidth(rune) switch
-            {
-                -1 => 0,
-                var w => w,
-            };
-        }
-
-        return width;
     }
 }
