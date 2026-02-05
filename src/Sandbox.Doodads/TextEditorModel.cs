@@ -2,6 +2,7 @@ using Spectre.Console;
 using Spectre.Tui;
 using Spectre.Tui.Doodads;
 using Spectre.Tui.Doodads.Doodads.TextArea;
+using Spectre.Tui.Doodads.Layout;
 using Spectre.Tui.Doodads.Messages;
 using Spectre.Tui.Doodads.Rendering;
 
@@ -40,16 +41,6 @@ public record TextEditorModel : IDoodad<TextEditorModel>, ISizedRenderable
         ShowLineNumbers = true,
     }.SetValue(SampleText).Focus().Model;
 
-    /// <summary>
-    /// Gets the terminal width for layout.
-    /// </summary>
-    public int TerminalWidth { get; init; } = 80;
-
-    /// <summary>
-    /// Gets the terminal height for layout.
-    /// </summary>
-    public int TerminalHeight { get; init; } = 24;
-
     /// <inheritdoc />
     public Command? Init()
     {
@@ -66,11 +57,9 @@ public record TextEditorModel : IDoodad<TextEditorModel>, ISizedRenderable
 
             case WindowSizeMessage ws:
                 var newWidth = Math.Max(20, ws.Width);
-                var newHeight = Math.Max(5, ws.Height - 3);
+                var newHeight = Math.Max(5, ws.Height - 2);
                 return (this with
                 {
-                    TerminalWidth = ws.Width,
-                    TerminalHeight = ws.Height,
                     TextArea = TextArea with
                     {
                         MinWidth = newWidth,
@@ -87,30 +76,45 @@ public record TextEditorModel : IDoodad<TextEditorModel>, ISizedRenderable
     /// <inheritdoc />
     public void View(IRenderSurface surface)
     {
-        var width = Math.Max(0, surface.Viewport.Width);
-        var height = Math.Max(0, surface.Viewport.Height);
-        var textAreaHeight = Math.Max(0, height - 2);
-
-        // Title bar
-        var titleStyle = new Appearance { Decoration = Decoration.Bold | Decoration.Invert };
-        var title = " Text Editor ";
-        var padding = new string(' ', Math.Max(0, width - title.Length));
-        surface.SetString(0, 0, title + padding, titleStyle);
-
-        // Text area
-        if (textAreaHeight > 0 && width > 0)
-        {
-            surface.Render(TextArea, new Rectangle(0, 1, width, textAreaHeight));
-        }
-
-        // Status bar
-        var statusY = 1 + textAreaHeight;
-        var statusStyle = new Appearance { Decoration = Decoration.Dim };
         var lineCount = TextArea.GetValue().Split('\n').Length;
-        var statusText = $"Lines: {lineCount} | Ctrl+Q: Quit";
-        if (height > 1)
+
+        var layout = Flex.Column()
+            .Add(new TitleBar(" Text Editor "), FlexSize.Fixed(1))
+            .Add(TextArea, FlexSize.Fill())
+            .Add(new StatusBar($"Lines: {lineCount} | Ctrl+Q: Quit"), FlexSize.Fixed(1));
+
+        surface.Render(layout, surface.Viewport);
+    }
+
+    /// <summary>
+    /// A title bar widget that renders inverted text filling the row.
+    /// </summary>
+    private record TitleBar(string Title) : ISizedRenderable
+    {
+        public int MinWidth => 1;
+        public int MinHeight => 1;
+
+        public void Render(IRenderSurface surface)
         {
-            surface.SetString(0, statusY, statusText, statusStyle);
+            var width = Math.Max(0, surface.Viewport.Width);
+            var style = new Appearance { Decoration = Decoration.Invert };
+            var padding = new string(' ', Math.Max(0, width - Title.Length));
+            surface.SetString(0, 0, Title + padding, style);
+        }
+    }
+
+    /// <summary>
+    /// A status bar widget that renders dim text.
+    /// </summary>
+    private record StatusBar(string Text) : ISizedRenderable
+    {
+        public int MinWidth => 1;
+        public int MinHeight => 1;
+
+        public void Render(IRenderSurface surface)
+        {
+            var style = new Appearance { Decoration = Decoration.Dim };
+            surface.SetString(0, 0, Text, style);
         }
     }
 }
