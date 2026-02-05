@@ -126,8 +126,7 @@ public record TodoModel : IDoodad<TodoModel>, ISizedRenderable
                 return (this, Commands.Quit());
 
             default:
-                var (updatedList, listCmd) = List.Update(message);
-                return (this with { List = updatedList }, listCmd);
+                return this.Forward(message, m => m.List, (m, v) => m with { List = v });
         }
     }
 
@@ -142,8 +141,7 @@ public record TodoModel : IDoodad<TodoModel>, ISizedRenderable
                 return CancelAdd();
 
             default:
-                var (updatedInput, inputCmd) = Input.Update(message);
-                return (this with { Input = updatedInput }, inputCmd);
+                return this.Forward(message, m => m.Input, (m, v) => m with { Input = v });
         }
     }
 

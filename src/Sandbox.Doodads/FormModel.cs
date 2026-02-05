@@ -430,59 +430,29 @@ public record FormModel : IDoodad<FormModel>, ISizedRenderable
             TerminalHeight = ws.Height,
         };
 
-        // Forward to all children
-        var (n, nc) = model.NameInput.Update(ws);
-        var (e, ec) = model.EmailInput.Update(ws);
-        var (p, pc) = model.PasswordInput.Update(ws);
-        var (t, tc) = model.NotesInput.Update(ws);
-
-        model = model with
-        {
-            NameInput = n,
-            EmailInput = e,
-            PasswordInput = p,
-            NotesInput = t,
-        };
-
-        return (model, Commands.Batch(nc, ec, pc, tc));
+        return model
+            .Forward(ws, m => m.NameInput, (m, v) => m with { NameInput = v })
+            .Forward(ws, m => m.EmailInput, (m, v) => m with { EmailInput = v })
+            .Forward(ws, m => m.PasswordInput, (m, v) => m with { PasswordInput = v })
+            .Forward(ws, m => m.NotesInput, (m, v) => m with { NotesInput = v });
     }
 
     private (FormModel Model, Command? Command) ForwardToFocusedChild(Message message)
     {
         return FocusedField switch
         {
-            0 => ForwardToName(message),
+            0 => this.Forward(message, m => m.NameInput, (m, v) => m with { NameInput = v }),
             1 => ForwardToEmail(message),
-            2 => ForwardToPassword(message),
-            3 => ForwardToNotes(message),
+            2 => this.Forward(message, m => m.PasswordInput, (m, v) => m with { PasswordInput = v }),
+            3 => this.Forward(message, m => m.NotesInput, (m, v) => m with { NotesInput = v }),
             _ => (this, null),
         };
     }
 
-    private (FormModel Model, Command? Command) ForwardToName(Message message)
-    {
-        var (updated, cmd) = NameInput.Update(message);
-        return (this with { NameInput = updated }, cmd);
-    }
-
     private (FormModel Model, Command? Command) ForwardToEmail(Message message)
     {
-        var (updated, cmd) = EmailInput.Update(message);
-        var model = this with { EmailInput = updated };
-        model = model.UpdateEmailSuggestions();
-        return (model, cmd);
-    }
-
-    private (FormModel Model, Command? Command) ForwardToPassword(Message message)
-    {
-        var (updated, cmd) = PasswordInput.Update(message);
-        return (this with { PasswordInput = updated }, cmd);
-    }
-
-    private (FormModel Model, Command? Command) ForwardToNotes(Message message)
-    {
-        var (updated, cmd) = NotesInput.Update(message);
-        return (this with { NotesInput = updated }, cmd);
+        var result = this.Forward(message, m => m.EmailInput, (m, v) => m with { EmailInput = v });
+        return (result.Model.UpdateEmailSuggestions(), result.Command);
     }
 
     private FormModel UpdateEmailSuggestions()

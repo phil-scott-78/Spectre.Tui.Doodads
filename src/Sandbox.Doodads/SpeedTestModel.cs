@@ -595,18 +595,10 @@ public record SpeedTestModel : IDoodad<SpeedTestModel>, ISizedRenderable
 
     private (SpeedTestModel Model, Command? Command) ForwardToChildren(Message message)
     {
-        var (updatedSpinner, spinnerCmd) = Spinner.Update(message);
-        var (updatedDlProgress, dlCmd) = DownloadProgress.Update(message);
-        var (updatedUlProgress, ulCmd) = UploadProgress.Update(message);
-
-        var model = this with
-        {
-            Spinner = updatedSpinner,
-            DownloadProgress = updatedDlProgress,
-            UploadProgress = updatedUlProgress,
-        };
-
-        return (model, Commands.Batch(spinnerCmd, dlCmd, ulCmd));
+        return this
+            .Forward(message, m => m.Spinner, (m, v) => m with { Spinner = v })
+            .Forward(message, m => m.DownloadProgress, (m, v) => m with { DownloadProgress = v })
+            .Forward(message, m => m.UploadProgress, (m, v) => m with { UploadProgress = v });
     }
 
     private static Command PollCommand()

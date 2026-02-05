@@ -68,8 +68,7 @@ public record TextEditorModel : IDoodad<TextEditorModel>, ISizedRenderable
                 }, null);
 
             default:
-                var (updatedArea, areaCmd) = TextArea.Update(message);
-                return (this with { TextArea = updatedArea }, areaCmd);
+                return this.Forward(message, m => m.TextArea, (m, v) => m with { TextArea = v });
         }
     }
 

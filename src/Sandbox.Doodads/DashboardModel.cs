@@ -155,28 +155,11 @@ public record DashboardModel : IDoodad<DashboardModel>, ISizedRenderable
 
     private (DashboardModel Model, Command? Command) ForwardToChildren(Message message)
     {
-        // Forward to spinner
-        var (updatedSpinner, spinnerCmd) = Spinner.Update(message);
-
-        // Forward to progress
-        var (updatedProgress, progressCmd) = Progress.Update(message);
-
-        // Forward to stopwatch
-        var (updatedStopwatch, swCmd) = Stopwatch.Update(message);
-
-        // Forward to timer
-        var (updatedTimer, timerCmd) = Timer.Update(message);
-
-        var model = this with
-        {
-            Spinner = updatedSpinner,
-            Progress = updatedProgress,
-            Stopwatch = updatedStopwatch,
-            Timer = updatedTimer,
-        };
-
-        var batchCmd = Commands.Batch(spinnerCmd, progressCmd, swCmd, timerCmd);
-        return (model, batchCmd);
+        return this
+            .Forward(message, m => m.Spinner, (m, v) => m with { Spinner = v })
+            .Forward(message, m => m.Progress, (m, v) => m with { Progress = v })
+            .Forward(message, m => m.Stopwatch, (m, v) => m with { Stopwatch = v })
+            .Forward(message, m => m.Timer, (m, v) => m with { Timer = v });
     }
 
     private static Command AutoProgressCommand()
