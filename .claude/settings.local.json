@@ -19,7 +19,8 @@
       "WebFetch(domain:www.nuget.org)",
       "Bash(dotnet list:*)",
       "Bash(dotnet format:*)",
-      "WebFetch(domain:www.meziantou.net)"
+      "WebFetch(domain:www.meziantou.net)",
+      "Bash(dotnet build.cs:*)"
     ],
     "deny": [],
     "ask": []

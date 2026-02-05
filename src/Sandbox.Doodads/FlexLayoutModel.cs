@@ -1,4 +1,3 @@
-using System.Text;
 using Spectre.Console;
 using Spectre.Tui;
 using Spectre.Tui.Doodads;
@@ -24,7 +23,7 @@ public record FlexLayoutModel : IDoodad<FlexLayoutModel>, ISizedRenderable
     {
         KeyMessage { Key: Key.Escape } => (this, Commands.Quit()),
         KeyMessage { Key: Key.CtrlC } => (this, Commands.Quit()),
-        KeyMessage { Key: Key.Char, Runes.Length: > 0 } km when km.Runes[0] == new Rune('q') => (this, Commands.Quit()),
+        KeyMessage { Char: 'q' } => (this, Commands.Quit()),
         _ => (this, null),
     };
 

@@ -1,4 +1,3 @@
-using System.Text;
 using Spectre.Console;
 using Spectre.Tui;
 using Spectre.Tui.Doodads;
@@ -78,7 +77,7 @@ public record MenuModel : IDoodad<MenuModel>, ISizedRenderable
             case KeyMessage { Key: Key.CtrlC }:
                 return (this, Commands.Quit());
 
-            case KeyMessage { Key: Key.Char, Runes.Length: > 0 } km when km.Runes[0] == new Rune('q'):
+            case KeyMessage { Char: 'q' }:
                 return (this, Commands.Quit());
 
             default:

@@ -27,6 +27,24 @@ public record KeyBinding
     public string HelpDescription { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets a value indicating whether the Alt modifier must match.
+    /// <c>null</c> means don't care; <c>true</c> means Alt must be held; <c>false</c> means Alt must not be held.
+    /// </summary>
+    public bool? Alt { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the Ctrl modifier must match.
+    /// <c>null</c> means don't care; <c>true</c> means Ctrl must be held; <c>false</c> means Ctrl must not be held.
+    /// </summary>
+    public bool? Ctrl { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the Shift modifier must match.
+    /// <c>null</c> means don't care; <c>true</c> means Shift must be held; <c>false</c> means Shift must not be held.
+    /// </summary>
+    public bool? Shift { get; init; }
+
+    /// <summary>
     /// Gets a value indicating whether this binding is enabled.
     /// </summary>
     public bool Enabled { get; init; } = true;
@@ -37,6 +55,21 @@ public record KeyBinding
     public bool Matches(KeyMessage message)
     {
         if (!Enabled)
+        {
+            return false;
+        }
+
+        if (Alt is { } alt && message.Alt != alt)
+        {
+            return false;
+        }
+
+        if (Ctrl is { } ctrl && message.Ctrl != ctrl)
+        {
+            return false;
+        }
+
+        if (Shift is { } shift && message.Shift != shift)
         {
             return false;
         }
@@ -69,6 +102,14 @@ public record KeyBinding
     {
         return new KeyBinding { Keys = [Key.Char], Runes = [.. runes] };
     }
+
+    /// <summary>
+    /// Creates a binding for <see cref="Key.Char"/> with specific character(s).
+    /// </summary>
+    public static KeyBinding ForChar(params char[] chars)
+    {
+        return new KeyBinding { Keys = [Key.Char], Runes = [.. chars.Select(c => new Rune(c))] };
+    }
 }
 
 /// <summary>
@@ -90,6 +131,38 @@ public static class KeyBindingExtensions
     public static KeyBinding WithRunes(this KeyBinding binding, params Rune[] runes)
     {
         return binding with { Runes = [.. runes] };
+    }
+
+    /// <summary>
+    /// Requires or excludes the Alt modifier.
+    /// </summary>
+    public static KeyBinding WithAlt(this KeyBinding binding, bool value = true)
+    {
+        return binding with { Alt = value };
+    }
+
+    /// <summary>
+    /// Requires or excludes the Ctrl modifier.
+    /// </summary>
+    public static KeyBinding WithCtrl(this KeyBinding binding, bool value = true)
+    {
+        return binding with { Ctrl = value };
+    }
+
+    /// <summary>
+    /// Requires or excludes the Shift modifier.
+    /// </summary>
+    public static KeyBinding WithShift(this KeyBinding binding, bool value = true)
+    {
+        return binding with { Shift = value };
+    }
+
+    /// <summary>
+    /// Requires that no modifiers (Alt, Ctrl, Shift) are held.
+    /// </summary>
+    public static KeyBinding WithoutModifiers(this KeyBinding binding)
+    {
+        return binding with { Alt = false, Ctrl = false, Shift = false };
     }
 
     /// <summary>

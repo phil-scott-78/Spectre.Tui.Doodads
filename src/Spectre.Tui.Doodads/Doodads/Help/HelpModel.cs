@@ -93,7 +93,7 @@ public record HelpModel : IDoodad<HelpModel>
     /// <inheritdoc />
     public (HelpModel Model, Command? Command) Update(Message message) => message switch
     {
-        KeyMessage { Runes.Length: > 0 } km when km.Runes[0] == new Rune('?')
+        KeyMessage { Char: '?' }
             => (this with { ShowAll = !ShowAll }, null),
         WindowSizeMessage ws => (this with { MinWidth = ws.Width }, null),
         _ => (this, null),

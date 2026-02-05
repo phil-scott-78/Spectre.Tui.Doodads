@@ -1,4 +1,3 @@
-using System.Text;
 using NetPace.Core;
 using NetPace.Core.Clients.Ookla;
 using Spectre.Console;
@@ -201,8 +200,7 @@ public record SpeedTestModel : IDoodad<SpeedTestModel>, ISizedRenderable
         return message switch
         {
             KeyMessage { Key: Key.Escape } or KeyMessage { Key: Key.CtrlC } => (this, Commands.Quit()),
-            KeyMessage { Key: Key.Char, Runes.Length: > 0 } km when km.Runes[0] == new Rune('q') => (this,
-                Commands.Quit()),
+            KeyMessage { Char: 'q' } => (this, Commands.Quit()),
             SpeedTestPhaseStart => StartFindingServers(),
             ServersFoundMessage found => StartTestingLatency(found),
             FastestServerFoundMessage fastest => StartDownloading(fastest),

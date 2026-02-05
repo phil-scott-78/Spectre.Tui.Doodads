@@ -1,4 +1,3 @@
-using System.Text;
 using Spectre.Tui.Doodads;
 using Spectre.Tui.Doodads.Doodads.Label;
 using Spectre.Tui.Doodads.Doodads.Progress;
@@ -84,18 +83,18 @@ public record DashboardModel : IDoodad<DashboardModel>, ISizedRenderable
             case KeyMessage { Key: Key.CtrlC }:
                 return (this, Commands.Quit());
 
-            case KeyMessage { Key: Key.Char, Runes.Length: > 0 } km when km.Runes[0] == new Rune('q'):
+            case KeyMessage { Char: 'q' }:
                 return (this, Commands.Quit());
 
             case KeyMessage { Key: Key.Space }:
                 var (toggledSw, swCmd) = Stopwatch.Toggle();
                 return (this with { Stopwatch = toggledSw }, swCmd);
 
-            case KeyMessage { Key: Key.Char, Runes.Length: > 0 } km when km.Runes[0] == new Rune('+'):
+            case KeyMessage { Char: '+' }:
                 var (incrProgress, incrCmd) = Progress.IncrPercent(0.05);
                 return (this with { Progress = incrProgress }, incrCmd);
 
-            case KeyMessage { Key: Key.Char, Runes.Length: > 0 } km when km.Runes[0] == new Rune('-'):
+            case KeyMessage { Char: '-' }:
                 var (decrProgress, decrCmd) = Progress.IncrPercent(-0.05);
                 return (this with { Progress = decrProgress }, decrCmd);
 

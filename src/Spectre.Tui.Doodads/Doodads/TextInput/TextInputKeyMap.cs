@@ -11,12 +11,14 @@ public record TextInputKeyMap : IKeyMap
     /// Gets the binding for moving the cursor one character forward.
     /// </summary>
     public KeyBinding CharForward { get; init; } = KeyBinding.For(Key.Right, Key.CtrlF)
+        .WithAlt(false)
         .WithHelp("→/ctrl+f", "character forward");
 
     /// <summary>
     /// Gets the binding for moving the cursor one character backward.
     /// </summary>
     public KeyBinding CharBackward { get; init; } = KeyBinding.For(Key.Left, Key.CtrlB)
+        .WithAlt(false)
         .WithHelp("←/ctrl+b", "character backward");
 
     /// <summary>
@@ -24,6 +26,7 @@ public record TextInputKeyMap : IKeyMap
     /// </summary>
     public KeyBinding WordForward { get; init; } = KeyBinding.For(Key.Right, Key.Char)
         .WithRunes(new Rune('f'))
+        .WithAlt()
         .WithHelp("alt+→/alt+f", "word forward");
 
     /// <summary>
@@ -31,6 +34,7 @@ public record TextInputKeyMap : IKeyMap
     /// </summary>
     public KeyBinding WordBackward { get; init; } = KeyBinding.For(Key.Left, Key.Char)
         .WithRunes(new Rune('b'))
+        .WithAlt()
         .WithHelp("alt+←/alt+b", "word backward");
 
     /// <summary>
@@ -55,6 +59,7 @@ public record TextInputKeyMap : IKeyMap
     /// Gets the binding for deleting the character after the cursor.
     /// </summary>
     public KeyBinding DeleteCharForward { get; init; } = KeyBinding.For(Key.Delete, Key.CtrlD)
+        .WithAlt(false)
         .WithHelp("del/ctrl+d", "delete character forward");
 
     /// <summary>
@@ -68,6 +73,7 @@ public record TextInputKeyMap : IKeyMap
     /// </summary>
     public KeyBinding DeleteWordForward { get; init; } = KeyBinding.For(Key.Delete, Key.Char)
         .WithRunes(new Rune('d'))
+        .WithAlt()
         .WithHelp("alt+d", "delete word forward");
 
     /// <summary>

@@ -1,4 +1,3 @@
-using System.Text;
 using Spectre.Console;
 using Spectre.Tui;
 using Spectre.Tui.Doodads;
@@ -112,13 +111,13 @@ public record TodoModel : IDoodad<TodoModel>, ISizedRenderable
     {
         switch (message)
         {
-            case KeyMessage { Key: Key.Char, Runes.Length: > 0 } km when km.Runes[0] == new Rune('a'):
+            case KeyMessage { Char: 'a' }:
                 return EnterAddMode();
 
-            case KeyMessage { Key: Key.Char, Runes.Length: > 0 } km when km.Runes[0] == new Rune('x'):
+            case KeyMessage { Char: 'x' }:
                 return ToggleSelected();
 
-            case KeyMessage { Key: Key.Char, Runes.Length: > 0 } km when km.Runes[0] == new Rune('d'):
+            case KeyMessage { Char: 'd' }:
                 return DeleteSelected();
 
             case KeyMessage { Key: Key.Escape }:

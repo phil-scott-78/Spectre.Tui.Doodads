@@ -508,28 +508,28 @@ public record TextInputModel : IDoodad<TextInputModel>, ISizedRenderable
         }
 
         // Cursor movement
-        if (KeyMap.CharForward.Matches(km) && !km.Alt)
+        if (KeyMap.CharForward.Matches(km))
         {
             return ResetIdleAfterKey(MoveForward());
         }
 
-        if (KeyMap.CharBackward.Matches(km) && !km.Alt)
+        if (KeyMap.CharBackward.Matches(km))
         {
             return ResetIdleAfterKey(MoveBackward());
         }
 
         // Word movement (Alt + arrow or Alt + f/b/d)
-        if (km.Alt && KeyMap.WordForward.Matches(km))
+        if (KeyMap.WordForward.Matches(km))
         {
             return ResetIdleAfterKey(MoveWordForward());
         }
 
-        if (km.Alt && KeyMap.WordBackward.Matches(km))
+        if (KeyMap.WordBackward.Matches(km))
         {
             return ResetIdleAfterKey(MoveWordBackward());
         }
 
-        if (km.Alt && KeyMap.DeleteWordForward.Matches(km))
+        if (KeyMap.DeleteWordForward.Matches(km))
         {
             return ResetIdleAfterKey(DeleteWordForward());
         }
@@ -550,7 +550,7 @@ public record TextInputModel : IDoodad<TextInputModel>, ISizedRenderable
             return ResetIdleAfterKey(DeleteBackward());
         }
 
-        if (KeyMap.DeleteCharForward.Matches(km) && !km.Alt)
+        if (KeyMap.DeleteCharForward.Matches(km))
         {
             return ResetIdleAfterKey(DeleteForward());
         }

@@ -21,10 +21,12 @@ public sealed class TextAreaKeyMap : IKeyMap
 
     public KeyBinding WordForward { get; init; } = KeyBinding.For(Key.Right, Key.Char)
         .WithRunes(new Rune('f'))
+        .WithAlt()
         .WithHelp("alt+→/alt+f", "word forward");
 
     public KeyBinding WordBackward { get; init; } = KeyBinding.For(Key.Left, Key.Char)
         .WithRunes(new Rune('b'))
+        .WithAlt()
         .WithHelp("alt+←/alt+b", "word backward");
 
     public KeyBinding DeleteWordBackward { get; init; } = KeyBinding.For(Key.CtrlW)
@@ -32,6 +34,7 @@ public sealed class TextAreaKeyMap : IKeyMap
 
     public KeyBinding DeleteWordForward { get; init; } = KeyBinding.For(Key.Delete, Key.Char)
         .WithRunes(new Rune('d'))
+        .WithAlt()
         .WithHelp("alt+d", "delete word forward");
 
     public KeyBinding LineStart { get; init; } = KeyBinding.For(Key.Home, Key.CtrlA)
@@ -63,23 +66,28 @@ public sealed class TextAreaKeyMap : IKeyMap
 
     public KeyBinding UppercaseWordForward { get; init; } = KeyBinding.For(Key.Char)
         .WithRunes(new Rune('u'))
+        .WithAlt()
         .WithHelp("alt+u", "uppercase word");
 
     public KeyBinding LowercaseWordForward { get; init; } = KeyBinding.For(Key.Char)
         .WithRunes(new Rune('l'))
+        .WithAlt()
         .WithHelp("alt+l", "lowercase word");
 
     public KeyBinding CapitalizeWordForward { get; init; } = KeyBinding.For(Key.Char)
         .WithRunes(new Rune('c'))
+        .WithAlt()
         .WithHelp("alt+c", "capitalize word");
 
     public KeyBinding TransposeCharacterBackward { get; init; } = KeyBinding.For(Key.CtrlT)
         .WithHelp("ctrl+t", "transpose chars");
 
     public KeyBinding InputBegin { get; init; } = KeyBinding.For(Key.Home)
+        .WithCtrl()
         .WithHelp("ctrl+home", "input begin");
 
     public KeyBinding InputEnd { get; init; } = KeyBinding.For(Key.End)
+        .WithCtrl()
         .WithHelp("ctrl+end", "input end");
 
     public KeyBinding Paste { get; init; } = KeyBinding.For(Key.CtrlV)

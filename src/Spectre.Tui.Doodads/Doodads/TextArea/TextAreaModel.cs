@@ -501,12 +501,12 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
     private (TextAreaModel Model, Command? Command) HandleKey(KeyMessage km)
     {
         // 1. Document navigation (Ctrl+Home/End) - most specific, check first
-        if (km is { Ctrl: true, Key: Key.Home })
+        if (KeyMap.InputBegin.Matches(km))
         {
             return ResetIdleAfterKey(InputBegin());
         }
 
-        if (km is { Ctrl: true, Key: Key.End })
+        if (KeyMap.InputEnd.Matches(km))
         {
             return ResetIdleAfterKey(InputEnd());
         }
@@ -523,12 +523,12 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
         }
 
         // 3. Word movement with Alt (Unix/Mac style)
-        if (km.Alt && KeyMap.WordForward.Matches(km))
+        if (KeyMap.WordForward.Matches(km))
         {
             return ResetIdleAfterKey(MoveWordForward());
         }
 
-        if (km.Alt && KeyMap.WordBackward.Matches(km))
+        if (KeyMap.WordBackward.Matches(km))
         {
             return ResetIdleAfterKey(MoveWordBackward());
         }
@@ -590,7 +590,7 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
             return ResetIdleAfterKey(DeleteWordBackward());
         }
 
-        if (km.Alt && KeyMap.DeleteWordForward.Matches(km))
+        if (KeyMap.DeleteWordForward.Matches(km))
         {
             return ResetIdleAfterKey(DeleteWordForward());
         }
@@ -623,17 +623,17 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
         }
 
         // Alt key combinations for word transforms
-        if (km.Alt && KeyMap.UppercaseWordForward.Matches(km))
+        if (KeyMap.UppercaseWordForward.Matches(km))
         {
             return ResetIdleAfterKey(UppercaseWordForward());
         }
 
-        if (km.Alt && KeyMap.LowercaseWordForward.Matches(km))
+        if (KeyMap.LowercaseWordForward.Matches(km))
         {
             return ResetIdleAfterKey(LowercaseWordForward());
         }
 
-        if (km.Alt && KeyMap.CapitalizeWordForward.Matches(km))
+        if (KeyMap.CapitalizeWordForward.Matches(km))
         {
             return ResetIdleAfterKey(CapitalizeWordForward());
         }
