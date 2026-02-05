@@ -407,19 +407,7 @@ public record TableModel : IDoodad<TableModel>, ISizedRenderable
             return model;
         }
 
-        var offset = model.ScrollOffset;
-
-        // If selected row is above the visible area, scroll up
-        if (model.SelectedIndex < offset)
-        {
-            offset = model.SelectedIndex;
-        }
-
-        // If selected row is below the visible area, scroll down
-        if (model.SelectedIndex >= offset + bodyHeight)
-        {
-            offset = model.SelectedIndex - bodyHeight + 1;
-        }
+        var offset = ScrollHelper.EnsureVisible(model.SelectedIndex, model.ScrollOffset, bodyHeight);
 
         // Clamp scroll offset
         var maxOffset = Math.Max(0, model.Rows.Count - bodyHeight);

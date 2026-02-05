@@ -1101,35 +1101,17 @@ public record TextAreaModel : IDoodad<TextAreaModel>, ISizedRenderable
 
     private static TextAreaModel EnsureVisible(TextAreaModel model)
     {
-        var rowOffset = model.RowOffset;
-        var colOffset = model.ColOffset;
         var effectiveHeight = model.Height > 0 ? model.Height : model.MinHeight;
         var effectiveWidth = model.Width > 0 ? model.Width : model.MinWidth;
 
-        if (model.Row < rowOffset)
-        {
-            rowOffset = model.Row;
-        }
-
-        if (model.Row >= rowOffset + effectiveHeight)
-        {
-            rowOffset = model.Row - effectiveHeight + 1;
-        }
+        var rowOffset = ScrollHelper.EnsureVisible(model.Row, model.RowOffset, effectiveHeight);
 
         var lineNumWidth = model.ShowLineNumbers
             ? (model.Lines.Length.ToString().Length + 1)
             : 0;
         var contentWidth = effectiveWidth - lineNumWidth;
 
-        if (model.Col < colOffset)
-        {
-            colOffset = model.Col;
-        }
-
-        if (model.Col >= colOffset + contentWidth)
-        {
-            colOffset = model.Col - contentWidth + 1;
-        }
+        var colOffset = ScrollHelper.EnsureVisible(model.Col, model.ColOffset, contentWidth);
 
         return model with { RowOffset = rowOffset, ColOffset = colOffset };
     }
