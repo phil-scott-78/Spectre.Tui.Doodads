@@ -2,6 +2,7 @@ using Shouldly;
 using Spectre.Tui.Doodads.Doodads.Spinner;
 using Spectre.Tui.Doodads.Doodads.Stopwatch;
 using Spectre.Tui.Doodads.Doodads.Timer;
+using Spectre.Tui.Doodads.Messages;
 
 namespace Spectre.Tui.Doodads.Tests.Integration;
 
@@ -15,7 +16,7 @@ public sealed class StaleTickTests
         var fixture = new DoodadFixture<SpinnerModel>(spinner);
 
         // When - send a tick with the wrong Tag
-        var staleTick = new SpinnerTickMessage { Id = spinner.Id, Tag = spinner.Tag + 99 };
+        var staleTick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = spinner.Ticks.Id, Tag = spinner.Ticks.Tag + 99 };
         fixture.Send(staleTick);
 
         // Then - frame should not advance
@@ -32,7 +33,7 @@ public sealed class StaleTickTests
         // When - send a tick with the correct Id and Tag.
         // The fixture processes the returned tick command which may produce
         // additional ticks, so the frame may advance more than once.
-        var validTick = new SpinnerTickMessage { Id = spinner.Id, Tag = spinner.Tag };
+        var validTick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = spinner.Ticks.Id, Tag = spinner.Ticks.Tag };
         fixture.Send(validTick);
 
         // Then - frame should have advanced from 0
@@ -47,7 +48,7 @@ public sealed class StaleTickTests
         var fixture = new DoodadFixture<SpinnerModel>(spinner);
 
         // When - send a tick with the wrong Id
-        var wrongIdTick = new SpinnerTickMessage { Id = -999, Tag = spinner.Tag };
+        var wrongIdTick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = -999, Tag = spinner.Ticks.Tag };
         fixture.Send(wrongIdTick);
 
         // Then - frame should not advance
@@ -62,7 +63,7 @@ public sealed class StaleTickTests
         var fixture = new DoodadFixture<StopwatchModel>(started);
 
         // When - send a tick with the wrong Tag (stale generation)
-        var staleTick = new StopwatchTickMessage { Id = started.Id, Tag = started.Tag + 99 };
+        var staleTick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = started.Ticks.Id, Tag = started.Ticks.Tag + 99 };
         fixture.Send(staleTick);
 
         // Then - elapsed should not change
@@ -79,7 +80,7 @@ public sealed class StaleTickTests
         // When - send a tick with the correct Id and Tag.
         // The fixture processes the returned tick command which may produce
         // additional ticks, so elapsed may increment more than once.
-        var validTick = new StopwatchTickMessage { Id = started.Id, Tag = started.Tag };
+        var validTick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = started.Ticks.Id, Tag = started.Ticks.Tag };
         fixture.Send(validTick);
 
         // Then - elapsed should have increased from zero
@@ -91,13 +92,13 @@ public sealed class StaleTickTests
     {
         // Given - a stopped stopwatch (with a known Id/Tag from a previous start)
         var (started, _) = new StopwatchModel().Start();
-        var savedId = started.Id;
-        var savedTag = started.Tag;
+        var savedId = started.Ticks.Id;
+        var savedTag = started.Ticks.Tag;
         var (stopped, _) = started.Stop();
         var fixture = new DoodadFixture<StopwatchModel>(stopped);
 
         // When - send a tick that matches the old running state
-        var oldTick = new StopwatchTickMessage { Id = savedId, Tag = savedTag };
+        var oldTick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = savedId, Tag = savedTag };
         fixture.Send(oldTick);
 
         // Then - elapsed should not change because Running is false and Tag changed on Stop
@@ -112,7 +113,7 @@ public sealed class StaleTickTests
         var fixture = new DoodadFixture<TimerModel>(started);
 
         // When - send a tick with the wrong Tag (stale generation)
-        var staleTick = new TimerTickMessage { Id = started.Id, Tag = started.Tag + 99 };
+        var staleTick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = started.Ticks.Id, Tag = started.Ticks.Tag + 99 };
         fixture.Send(staleTick);
 
         // Then - timeout should not change
@@ -129,7 +130,7 @@ public sealed class StaleTickTests
         // When - send a valid tick.
         // The fixture processes the returned tick command which may produce
         // additional ticks, so timeout may decrement more than once.
-        var validTick = new TimerTickMessage { Id = started.Id, Tag = started.Tag };
+        var validTick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = started.Ticks.Id, Tag = started.Ticks.Tag };
         fixture.Send(validTick);
 
         // Then - timeout should have decreased from the original 10 seconds
@@ -141,13 +142,13 @@ public sealed class StaleTickTests
     {
         // Given - a timer that was started then stopped
         var (started, _) = new TimerModel { Timeout = TimeSpan.FromSeconds(10) }.Start();
-        var savedId = started.Id;
-        var savedTag = started.Tag;
+        var savedId = started.Ticks.Id;
+        var savedTag = started.Ticks.Tag;
         var (stopped, _) = started.Stop();
         var fixture = new DoodadFixture<TimerModel>(stopped);
 
         // When - send a tick that matches the old running state
-        var oldTick = new TimerTickMessage { Id = savedId, Tag = savedTag };
+        var oldTick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = savedId, Tag = savedTag };
         fixture.Send(oldTick);
 
         // Then - timeout should not change because Running is false and Tag changed on Stop

@@ -1,5 +1,6 @@
 using Shouldly;
 using Spectre.Tui.Doodads.Doodads.Stopwatch;
+using Spectre.Tui.Doodads.Messages;
 
 namespace Spectre.Tui.Doodads.Tests.Doodads;
 
@@ -57,7 +58,7 @@ public sealed class StopwatchModelTests
     public void Update_Tick_Should_Increment_Elapsed()
     {
         var sw = new StopwatchModel { Running = true };
-        var tick = new StopwatchTickMessage { Id = sw.Id, Tag = sw.Tag };
+        var tick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = sw.Ticks.Id, Tag = sw.Ticks.Tag };
 
         var (updated, cmd) = sw.Update(tick);
 
@@ -69,7 +70,7 @@ public sealed class StopwatchModelTests
     public void Update_Stale_Tick_Should_Be_Ignored()
     {
         var sw = new StopwatchModel { Running = true };
-        var tick = new StopwatchTickMessage { Id = sw.Id, Tag = sw.Tag + 99 };
+        var tick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = sw.Ticks.Id, Tag = sw.Ticks.Tag + 99 };
 
         var (updated, cmd) = sw.Update(tick);
 

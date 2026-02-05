@@ -61,7 +61,7 @@ All messages are immutable records inheriting from `abstract record Message`.
 | `WindowSizeMessage` | `Width`, `Height` | Terminal resize |
 | `FocusMessage` | *(none)* | Terminal gained focus |
 | `BlurMessage` | *(none)* | Terminal lost focus |
-| `TickMessage` | `Time`, `Id`, `Tag` | Animation/timer frame |
+| `TickMessage` | `Time`, `Id`, `Tag`, `Kind?` | Animation/timer frame |
 | `QuitMessage` | *(none)* | Exit program |
 | `BatchMessage` | `Messages` | Internal: batch command results |
 | `SequenceMessage` | `StepMessage`, `Remaining` | Internal: sequence step result |
@@ -260,9 +260,17 @@ All models are `record` types. State updates use `with` expressions:
 var updated = model with { Property = newValue };
 ```
 
-### Stale Tick Detection
+### Stale Tick Detection (TickSource)
 
-Animated components use an `Id` + `Tag` pattern. `Id` is unique per instance (static counter via `Interlocked.Increment`). `Tag` increments on state changes. Tick messages carry both values and are ignored on `Tag` mismatch, preventing stale animation frames.
+Animated components embed a `TickSource Ticks` property that encapsulates the `Id` + `Tag` stale-tick pattern. `TickSource` is an immutable record with:
+
+- **`Id`** — Unique per instance (static counter via `Interlocked.Increment`).
+- **`Tag`** — Incremented on state changes via `Advance()` to invalidate in-flight ticks.
+- **`IsValid(TickMessage)`** — Guards incoming ticks by matching `Id` and `Tag`.
+- **`IsValid(TickMessage, string kind)`** — Also matches the `Kind` discriminator (used by `CursorModel` for `"blink"` vs `"idle"` ticks).
+- **`CreateTick(TimeSpan, string?)`** — Creates a `Command` that produces a `TickMessage` after the given interval.
+
+Components use `TickSource` instead of managing `Id`/`Tag` fields directly. The `TickMessage.Kind` property enables components with multiple tick purposes (e.g., `CursorModel`) to distinguish between them using a single `TickSource`.
 
 ### Sub-component Composition
 

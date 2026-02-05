@@ -1,5 +1,6 @@
 using Shouldly;
 using Spectre.Tui.Doodads.Doodads.Timer;
+using Spectre.Tui.Doodads.Messages;
 
 namespace Spectre.Tui.Doodads.Tests.Doodads;
 
@@ -73,7 +74,7 @@ public sealed class TimerModelTests
             Running = true,
         };
 
-        var tick = new TimerTickMessage { Id = timer.Id, Tag = timer.Tag };
+        var tick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = timer.Ticks.Id, Tag = timer.Ticks.Tag };
         var (updated, cmd) = timer.Update(tick);
 
         updated.Timeout.ShouldBe(TimeSpan.FromSeconds(9));
@@ -90,7 +91,7 @@ public sealed class TimerModelTests
             Running = true,
         };
 
-        var tick = new TimerTickMessage { Id = timer.Id, Tag = timer.Tag };
+        var tick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = timer.Ticks.Id, Tag = timer.Ticks.Tag };
         var (updated, cmd) = timer.Update(tick);
 
         updated.Timeout.ShouldBe(TimeSpan.Zero);

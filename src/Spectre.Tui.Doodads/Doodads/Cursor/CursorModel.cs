@@ -5,8 +5,6 @@ namespace Spectre.Tui.Doodads.Doodads.Cursor;
 /// </summary>
 public record CursorModel : IDoodad<CursorModel>
 {
-    private static int _nextId;
-
     /// <summary>
     /// Gets the cursor display mode.
     /// </summary>
@@ -46,14 +44,9 @@ public record CursorModel : IDoodad<CursorModel>
     internal string Character { get; init; } = " ";
 
     /// <summary>
-    /// Gets the unique identifier for this cursor instance.
+    /// Gets the tick source for stale tick detection.
     /// </summary>
-    internal int Id { get; init; } = Interlocked.Increment(ref _nextId);
-
-    /// <summary>
-    /// Gets the blink generation tag for stale tick detection.
-    /// </summary>
-    internal int Tag { get; init; }
+    internal TickSource Ticks { get; init; } = new();
 
     /// <summary>
     /// Gets a value indicating whether the cursor is idle (not recently active).
@@ -83,11 +76,11 @@ public record CursorModel : IDoodad<CursorModel>
             case BlurMessage:
                 return Blur();
 
-            case CursorBlinkMessage blink when blink.Id == Id && blink.Tag == Tag:
+            case TickMessage tick when Ticks.IsValid(tick, "blink"):
                 var toggled = this with { Visible = !Visible };
                 return (toggled, toggled.BlinkCommand());
 
-            case CursorIdleMessage idle when idle.Id == Id && idle.Tag == Tag:
+            case TickMessage tick when Ticks.IsValid(tick, "idle"):
                 var idleModel = this with { IsIdle = true };
                 return (idleModel, idleModel.BlinkCommand());
 
@@ -120,7 +113,7 @@ public record CursorModel : IDoodad<CursorModel>
     /// </summary>
     public (CursorModel Model, Command? Command) Focus()
     {
-        var focused = this with { Focused = true, Visible = true, Tag = Tag + 1 };
+        var focused = this with { Focused = true, Visible = true, Ticks = Ticks.Advance() };
         var cmd = focused.Mode == CursorMode.Blink ? focused.BlinkCommand() : null;
         return (focused, cmd);
     }
@@ -130,7 +123,7 @@ public record CursorModel : IDoodad<CursorModel>
     /// </summary>
     public (CursorModel Model, Command? Command) Blur()
     {
-        return (this with { Focused = false, Tag = Tag + 1 }, null);
+        return (this with { Focused = false, Ticks = Ticks.Advance() }, null);
     }
 
     /// <summary>
@@ -161,12 +154,10 @@ public record CursorModel : IDoodad<CursorModel>
         }
 
         // Increment Tag to cancel pending blink/idle messages, set visible and not idle
-        var model = this with { Visible = true, IsIdle = false, Tag = Tag + 1 };
+        var model = this with { Visible = true, IsIdle = false, Ticks = Ticks.Advance() };
 
         // Schedule transition to idle after BlinkSpeed timeout
-        var id = model.Id;
-        var tag = model.Tag;
-        var cmd = Commands.Tick(BlinkSpeed, _ => new CursorIdleMessage { Id = id, Tag = tag });
+        var cmd = model.Ticks.CreateTick(BlinkSpeed, "idle");
         return (model, cmd);
     }
 
@@ -180,9 +171,7 @@ public record CursorModel : IDoodad<CursorModel>
 
         if (Mode == CursorMode.Blink && Focused)
         {
-            var id = Id;
-            var tag = Tag;
-            return Commands.Tick(BlinkSpeed, _ => new CursorBlinkMessage { Id = id, Tag = tag });
+            return Ticks.CreateTick(BlinkSpeed, "blink");
         }
 
         return null;

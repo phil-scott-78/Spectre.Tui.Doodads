@@ -5,8 +5,6 @@ namespace Spectre.Tui.Doodads.Doodads.Progress;
 /// </summary>
 public record ProgressModel : IDoodad<ProgressModel>, ISizedRenderable
 {
-    private static int _nextId;
-
     private const double AnimationSpeed = 0.1;
     private const double AnimationThreshold = 0.001;
     private static readonly TimeSpan AnimationInterval = TimeSpan.FromMilliseconds(16);
@@ -102,14 +100,16 @@ public record ProgressModel : IDoodad<ProgressModel>, ISizedRenderable
     internal double DisplayPercent { get; init; }
 
     /// <summary>
-    /// Gets the unique identifier for this progress bar instance.
+    /// Gets the tick source for stale tick detection.
     /// </summary>
-    internal int Id { get; init; } = Interlocked.Increment(ref _nextId);
+    internal TickSource Ticks { get; init; } = new();
 
     /// <summary>
     /// Gets a value indicating whether the progress bar is currently animating.
     /// </summary>
-    public bool IsAnimating { get; init; }
+    public bool IsAnimating =>
+        Math.Abs(Percent - DisplayPercent) >= AnimationThreshold ||
+        Math.Abs(SpringVelocity) >= AnimationThreshold;
 
     /// <summary>
     /// Gets the velocity for spring-based animation.
@@ -127,11 +127,11 @@ public record ProgressModel : IDoodad<ProgressModel>, ISizedRenderable
     {
         switch (message)
         {
-            case ProgressFrameMessage frame when frame.Id == Id && IsAnimating:
+            case TickMessage tick when Ticks.IsValid(tick) && IsAnimating:
                 var diff = Percent - DisplayPercent;
                 if (Math.Abs(diff) < AnimationThreshold && Math.Abs(SpringVelocity) < AnimationThreshold)
                 {
-                    return (this with { DisplayPercent = Percent, IsAnimating = false, SpringVelocity = 0 }, null);
+                    return (this with { DisplayPercent = Percent, SpringVelocity = 0 }, null);
                 }
 
                 double newDisplay;
@@ -243,7 +243,7 @@ public record ProgressModel : IDoodad<ProgressModel>, ISizedRenderable
     public (ProgressModel Model, Command? Command) SetPercent(double percent)
     {
         var clamped = Math.Clamp(percent, 0.0, 1.0);
-        var updated = this with { Percent = clamped, IsAnimating = true };
+        var updated = this with { Percent = clamped, Ticks = Ticks.Advance() };
         return (updated, updated.FrameCommand());
     }
 
@@ -255,7 +255,7 @@ public record ProgressModel : IDoodad<ProgressModel>, ISizedRenderable
     public ProgressModel SetPercentImmediate(double percent)
     {
         var clamped = Math.Clamp(percent, 0.0, 1.0);
-        return this with { Percent = clamped, DisplayPercent = clamped, IsAnimating = false, SpringVelocity = 0 };
+        return this with { Percent = clamped, DisplayPercent = clamped, SpringVelocity = 0 };
     }
 
     /// <summary>
@@ -322,7 +322,6 @@ public record ProgressModel : IDoodad<ProgressModel>, ISizedRenderable
 
     private Command FrameCommand()
     {
-        var id = Id;
-        return Commands.Tick(AnimationInterval, _ => new ProgressFrameMessage { Id = id });
+        return Ticks.CreateTick(AnimationInterval);
     }
 }

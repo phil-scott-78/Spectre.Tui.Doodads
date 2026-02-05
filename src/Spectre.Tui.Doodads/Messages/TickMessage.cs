@@ -19,4 +19,9 @@ public record TickMessage : Message
     /// Gets the tag for stale tick detection.
     /// </summary>
     public required int Tag { get; init; }
+
+    /// <summary>
+    /// Gets the optional kind discriminator for components that use multiple tick purposes.
+    /// </summary>
+    public string? Kind { get; init; }
 }

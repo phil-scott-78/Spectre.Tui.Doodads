@@ -5,8 +5,6 @@ namespace Spectre.Tui.Doodads.Doodads.Spinner;
 /// </summary>
 public record SpinnerModel : IDoodad<SpinnerModel>, ISizedRenderable
 {
-    private static int _nextId;
-
     /// <summary>
     /// Gets the spinner type that defines frames and interval.
     /// </summary>
@@ -33,19 +31,14 @@ public record SpinnerModel : IDoodad<SpinnerModel>, ISizedRenderable
     internal int Frame { get; init; }
 
     /// <summary>
-    /// Gets the unique identifier for this spinner instance.
+    /// Gets the tick source for stale tick detection.
     /// </summary>
-    public int Id { get; init; } = Interlocked.Increment(ref _nextId);
-
-    /// <summary>
-    /// Gets the generation tag for stale tick detection.
-    /// </summary>
-    internal int Tag { get; init; }
+    public TickSource Ticks { get; init; } = new();
 
     /// <inheritdoc />
     public Command Init()
     {
-        return TickCommand();
+        return Ticks.CreateTick(Spinner.Interval);
     }
 
     /// <inheritdoc />
@@ -53,10 +46,10 @@ public record SpinnerModel : IDoodad<SpinnerModel>, ISizedRenderable
     {
         switch (message)
         {
-            case SpinnerTickMessage tick when tick.Id == Id && tick.Tag == Tag:
+            case TickMessage tick when Ticks.IsValid(tick):
                 var nextFrame = (Frame + 1) % Spinner.Frames.Count;
                 var updated = this with { Frame = nextFrame };
-                return (updated, updated.TickCommand());
+                return (updated, updated.Ticks.CreateTick(Spinner.Interval));
 
             default:
                 return (this, null);
@@ -81,13 +74,6 @@ public record SpinnerModel : IDoodad<SpinnerModel>, ISizedRenderable
     {
         var nextFrame = (Frame + 1) % Spinner.Frames.Count;
         var updated = this with { Frame = nextFrame };
-        return (updated, updated.TickCommand());
-    }
-
-    private Command TickCommand()
-    {
-        var id = Id;
-        var tag = Tag;
-        return Commands.Tick(Spinner.Interval, _ => new SpinnerTickMessage { Id = id, Tag = tag });
+        return (updated, updated.Ticks.CreateTick(Spinner.Interval));
     }
 }

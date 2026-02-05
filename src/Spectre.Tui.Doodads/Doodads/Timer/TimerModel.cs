@@ -6,8 +6,6 @@ namespace Spectre.Tui.Doodads.Doodads.Timer;
 /// </summary>
 public record TimerModel : IDoodad<TimerModel>, ISizedRenderable
 {
-    private static int _nextId;
-
     /// <summary>
     /// Gets the minimum display width of the timer.
     /// </summary>
@@ -39,21 +37,16 @@ public record TimerModel : IDoodad<TimerModel>, ISizedRenderable
     public bool Timedout { get; init; }
 
     /// <summary>
-    /// Gets the unique identifier for this timer instance.
+    /// Gets the tick source for stale tick detection.
     /// </summary>
-    internal int Id { get; init; } = Interlocked.Increment(ref _nextId);
-
-    /// <summary>
-    /// Gets the generation tag for stale tick detection.
-    /// </summary>
-    internal int Tag { get; init; }
+    internal TickSource Ticks { get; init; } = new();
 
     /// <inheritdoc />
     public Command? Init()
     {
         if (Running)
         {
-            return TickCommand();
+            return Ticks.CreateTick(Interval);
         }
 
         return null;
@@ -64,18 +57,18 @@ public record TimerModel : IDoodad<TimerModel>, ISizedRenderable
     {
         switch (message)
         {
-            case TimerTickMessage tick when tick.Id == Id && tick.Tag == Tag && Running:
+            case TickMessage tick when Ticks.IsValid(tick) && Running:
                 var remaining = Timeout - Interval;
                 if (remaining <= TimeSpan.Zero)
                 {
-                    var finished = this with { Timeout = TimeSpan.Zero, Running = false, Timedout = true, Tag = Tag + 1 };
-                    return (finished, Commands.Message(new TimerTimeoutMessage { Id = Id }));
+                    var finished = this with { Timeout = TimeSpan.Zero, Running = false, Timedout = true, Ticks = Ticks.Advance() };
+                    return (finished, Commands.Message(new TimerTimeoutMessage { Id = Ticks.Id }));
                 }
 
                 var updated = this with { Timeout = remaining };
-                return (updated, updated.TickCommand());
+                return (updated, updated.Ticks.CreateTick(Interval));
 
-            case TimerStartStopMessage startStop when startStop.Id == Id:
+            case TimerStartStopMessage startStop when startStop.Id == Ticks.Id:
                 if (startStop.Running)
                 {
                     return Start();
@@ -108,8 +101,8 @@ public record TimerModel : IDoodad<TimerModel>, ISizedRenderable
     /// <returns>The updated model and a tick command.</returns>
     public (TimerModel Model, Command? Command) Start()
     {
-        var started = this with { Running = true, Tag = Tag + 1 };
-        return (started, started.TickCommand());
+        var started = this with { Running = true, Ticks = Ticks.Advance() };
+        return (started, started.Ticks.CreateTick(Interval));
     }
 
     /// <summary>
@@ -118,7 +111,7 @@ public record TimerModel : IDoodad<TimerModel>, ISizedRenderable
     /// <returns>The updated model with no command.</returns>
     public (TimerModel Model, Command? Command) Stop()
     {
-        return (this with { Running = false, Tag = Tag + 1 }, null);
+        return (this with { Running = false, Ticks = Ticks.Advance() }, null);
     }
 
     /// <summary>
@@ -137,13 +130,6 @@ public record TimerModel : IDoodad<TimerModel>, ISizedRenderable
     /// <returns>The updated model with no command.</returns>
     public (TimerModel Model, Command? Command) Reset(TimeSpan timeout)
     {
-        return (this with { Timeout = timeout, Running = false, Timedout = false, Tag = Tag + 1 }, null);
-    }
-
-    private Command TickCommand()
-    {
-        var id = Id;
-        var tag = Tag;
-        return Commands.Tick(Interval, _ => new TimerTickMessage { Id = id, Tag = tag });
+        return (this with { Timeout = timeout, Running = false, Timedout = false, Ticks = Ticks.Advance() }, null);
     }
 }

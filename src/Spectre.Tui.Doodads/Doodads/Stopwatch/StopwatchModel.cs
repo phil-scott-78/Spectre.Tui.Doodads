@@ -5,8 +5,6 @@ namespace Spectre.Tui.Doodads.Doodads.Stopwatch;
 /// </summary>
 public record StopwatchModel : IDoodad<StopwatchModel>, ISizedRenderable
 {
-    private static int _nextId;
-
     /// <summary>
     /// Gets the minimum display width of the stopwatch.
     /// </summary>
@@ -33,21 +31,16 @@ public record StopwatchModel : IDoodad<StopwatchModel>, ISizedRenderable
     public bool Running { get; init; }
 
     /// <summary>
-    /// Gets the unique identifier for this stopwatch instance.
+    /// Gets the tick source for stale tick detection.
     /// </summary>
-    internal int Id { get; init; } = Interlocked.Increment(ref _nextId);
-
-    /// <summary>
-    /// Gets the generation tag for stale tick detection.
-    /// </summary>
-    internal int Tag { get; init; }
+    internal TickSource Ticks { get; init; } = new();
 
     /// <inheritdoc />
     public Command? Init()
     {
         if (Running)
         {
-            return TickCommand();
+            return Ticks.CreateTick(Interval);
         }
 
         return null;
@@ -58,11 +51,11 @@ public record StopwatchModel : IDoodad<StopwatchModel>, ISizedRenderable
     {
         switch (message)
         {
-            case StopwatchTickMessage tick when tick.Id == Id && tick.Tag == Tag && Running:
+            case TickMessage tick when Ticks.IsValid(tick) && Running:
                 var updated = this with { Elapsed = Elapsed + Interval };
-                return (updated, updated.TickCommand());
+                return (updated, updated.Ticks.CreateTick(Interval));
 
-            case StopwatchStartStopMessage startStop when startStop.Id == Id:
+            case StopwatchStartStopMessage startStop when startStop.Id == Ticks.Id:
                 if (startStop.Running)
                 {
                     return Start();
@@ -70,7 +63,7 @@ public record StopwatchModel : IDoodad<StopwatchModel>, ISizedRenderable
 
                 return Stop();
 
-            case StopwatchResetMessage reset when reset.Id == Id:
+            case StopwatchResetMessage reset when reset.Id == Ticks.Id:
                 return Reset();
 
             default:
@@ -98,8 +91,8 @@ public record StopwatchModel : IDoodad<StopwatchModel>, ISizedRenderable
     /// <returns>The updated model and a tick command.</returns>
     public (StopwatchModel Model, Command? Command) Start()
     {
-        var started = this with { Running = true, Tag = Tag + 1 };
-        return (started, started.TickCommand());
+        var started = this with { Running = true, Ticks = Ticks.Advance() };
+        return (started, started.Ticks.CreateTick(Interval));
     }
 
     /// <summary>
@@ -108,7 +101,7 @@ public record StopwatchModel : IDoodad<StopwatchModel>, ISizedRenderable
     /// <returns>The updated model with no command.</returns>
     public (StopwatchModel Model, Command? Command) Stop()
     {
-        return (this with { Running = false, Tag = Tag + 1 }, null);
+        return (this with { Running = false, Ticks = Ticks.Advance() }, null);
     }
 
     /// <summary>
@@ -126,13 +119,6 @@ public record StopwatchModel : IDoodad<StopwatchModel>, ISizedRenderable
     /// <returns>The updated model with no command.</returns>
     public (StopwatchModel Model, Command? Command) Reset()
     {
-        return (this with { Elapsed = TimeSpan.Zero, Running = false, Tag = Tag + 1 }, null);
-    }
-
-    private Command TickCommand()
-    {
-        var id = Id;
-        var tag = Tag;
-        return Commands.Tick(Interval, _ => new StopwatchTickMessage { Id = id, Tag = tag });
+        return (this with { Elapsed = TimeSpan.Zero, Running = false, Ticks = Ticks.Advance() }, null);
     }
 }

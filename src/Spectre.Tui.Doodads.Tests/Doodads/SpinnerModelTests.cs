@@ -1,5 +1,6 @@
 using Shouldly;
 using Spectre.Tui.Doodads.Doodads.Spinner;
+using Spectre.Tui.Doodads.Messages;
 
 namespace Spectre.Tui.Doodads.Tests.Doodads;
 
@@ -16,7 +17,7 @@ public sealed class SpinnerModelTests
     public void Update_With_Matching_Tick_Should_Advance_Frame()
     {
         var spinner = new SpinnerModel();
-        var tick = new SpinnerTickMessage { Id = spinner.Id, Tag = spinner.Tag };
+        var tick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = spinner.Ticks.Id, Tag = spinner.Ticks.Tag };
 
         var (updated, cmd) = spinner.Update(tick);
 
@@ -28,7 +29,7 @@ public sealed class SpinnerModelTests
     public void Update_With_Stale_Tick_Should_Not_Advance()
     {
         var spinner = new SpinnerModel();
-        var tick = new SpinnerTickMessage { Id = spinner.Id, Tag = spinner.Tag + 99 };
+        var tick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = spinner.Ticks.Id, Tag = spinner.Ticks.Tag + 99 };
 
         var (updated, cmd) = spinner.Update(tick);
 
@@ -40,7 +41,7 @@ public sealed class SpinnerModelTests
     public void Update_With_Wrong_Id_Should_Not_Advance()
     {
         var spinner = new SpinnerModel();
-        var tick = new SpinnerTickMessage { Id = -999, Tag = spinner.Tag };
+        var tick = new TickMessage { Time = DateTimeOffset.UtcNow, Id = -999, Tag = spinner.Ticks.Tag };
 
         var (updated, cmd) = spinner.Update(tick);
 
@@ -55,9 +56,9 @@ public sealed class SpinnerModelTests
         var spinner = new SpinnerModel { Spinner = spinnerType };
 
         // Advance past the end
-        var tick1 = new SpinnerTickMessage { Id = spinner.Id, Tag = spinner.Tag };
+        var tick1 = new TickMessage { Time = DateTimeOffset.UtcNow, Id = spinner.Ticks.Id, Tag = spinner.Ticks.Tag };
         var (s1, _) = spinner.Update(tick1); // frame 1
-        var tick2 = new SpinnerTickMessage { Id = s1.Id, Tag = s1.Tag };
+        var tick2 = new TickMessage { Time = DateTimeOffset.UtcNow, Id = s1.Ticks.Id, Tag = s1.Ticks.Tag };
         var (s2, _) = s1.Update(tick2); // frame 2 => wraps to 0
 
         s2.Frame.ShouldBe(0);

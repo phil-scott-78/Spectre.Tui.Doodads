@@ -84,7 +84,7 @@ public sealed class CursorModelTests
         var (blurred, _) = cursor.Blur();
 
         // Then
-        blurred.Tag.ShouldBe(cursor.Tag + 1);
+        blurred.Ticks.Tag.ShouldBe(cursor.Ticks.Tag + 1);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public sealed class CursorModelTests
         // Then
         reset.Visible.ShouldBeTrue();
         reset.IsIdle.ShouldBeFalse();
-        cmd.ShouldNotBeNull(); // Schedules CursorIdleMessage
+        cmd.ShouldNotBeNull(); // Schedules idle tick
     }
 
     [Fact]
@@ -192,13 +192,13 @@ public sealed class CursorModelTests
         // Given
         var cursor = new CursorModel { Mode = CursorMode.Blink, Focused = true };
         var (focused, _) = cursor.Focus();
-        var originalTag = focused.Tag;
+        var originalTag = focused.Ticks.Tag;
 
         // When
         var (reset, _) = focused.ResetIdle();
 
         // Then
-        reset.Tag.ShouldBe(originalTag + 1);
+        reset.Ticks.Tag.ShouldBe(originalTag + 1);
     }
 
     [Fact]

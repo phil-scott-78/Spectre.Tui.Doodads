@@ -179,7 +179,7 @@ public record ListModel<TItem> : IDoodad<ListModel<TItem>>, ISizedRenderable
             case ListStatusMessage:
                 return (this, null);
 
-            case SpinnerTickMessage when ShowSpinner:
+            case TickMessage when ShowSpinner:
                 var (updatedSpinner, spinnerCmd) = Spinner.Update(message);
                 return (this with { Spinner = updatedSpinner }, spinnerCmd);
 
